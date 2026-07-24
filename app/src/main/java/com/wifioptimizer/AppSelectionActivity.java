@@ -1,6 +1,6 @@
 package com.wifioptimizer;
 
-import android.content.pm.ApplicationInfo;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -135,7 +135,7 @@ public class AppSelectionActivity extends AppCompatActivity
         }
 
         // Sort: blocked apps first, then alphabetically
-        result.sort((a, b) -> {
+        java.util.Collections.sort(result, (a, b) -> {
             if (a.isBlocked() != b.isBlocked()) return a.isBlocked() ? -1 : 1;
             return a.getAppName().compareToIgnoreCase(b.getAppName());
         });

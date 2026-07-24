@@ -42,7 +42,9 @@ public class ScheduleReceiver extends BroadcastReceiver {
                 break;
 
             case ACTION_STOP:
-                stopVpnService(context);
+                if (!ScheduleManager.isInBlockWindow(context)) {
+                    stopVpnService(context);
+                }
                 ScheduleManager.rescheduleNextDay(context, ACTION_STOP, rc, scheduleId, hour, minute);
                 break;
         }

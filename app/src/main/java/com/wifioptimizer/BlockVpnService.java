@@ -52,7 +52,7 @@ public class BlockVpnService extends VpnService {
         }
         if (isRunning) {
             // Restart tunnel to apply any new blocked apps list
-            stopVpn();
+            tearDownTunnel();
         }
         startVpn();
         return START_STICKY;
@@ -150,13 +150,14 @@ public class BlockVpnService extends VpnService {
         readerThread.start();
     }
 
-    private void stopVpn() {
+    private void tearDownTunnel() {
         if (!isRunning) return;
         isRunning = false;
         shouldRun = false;
 
+        // The thread blocks on vpnFd.read(). 
+        // Closing the fd below will unblock it and cause an IOException.
         if (readerThread != null) {
-            readerThread.interrupt();
             readerThread = null;
         }
 
@@ -166,7 +167,10 @@ public class BlockVpnService extends VpnService {
                 vpnFd = null;
             }
         } catch (IOException ignored) {}
+    }
 
+    private void stopVpn() {
+        tearDownTunnel();
         stopForeground(true);
         stopSelf();
     }

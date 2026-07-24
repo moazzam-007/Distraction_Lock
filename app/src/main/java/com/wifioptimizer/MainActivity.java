@@ -88,18 +88,7 @@ public class MainActivity extends AppCompatActivity {
         btnGrantVpn  = findViewById(R.id.btnGrantVpn);
 
         // Master ON/OFF toggle
-        switchEnable.setOnCheckedChangeListener((btn, isChecked) -> {
-            PrefsManager.getInstance().setEnabled(this, isChecked);
-            if (isChecked) {
-                checkVpnAndActivate();
-            } else {
-                ScheduleManager.cancelAll(this);
-                Intent i = new Intent(this, BlockVpnService.class);
-                i.setAction(BlockVpnService.ACTION_STOP);
-                startService(i);
-            }
-            updateUI();
-        });
+        switchEnable.setOnCheckedChangeListener(this::onSwitchEnableChanged);
 
         // Grant VPN permission button
         btnGrantVpn.setOnClickListener(v -> checkVpnAndActivate());
@@ -119,6 +108,19 @@ public class MainActivity extends AppCompatActivity {
 
     // ─── UI State ──────────────────────────────────────────────────────────────
 
+    private void onSwitchEnableChanged(android.widget.CompoundButton btn, boolean isChecked) {
+        PrefsManager.getInstance().setEnabled(this, isChecked);
+        if (isChecked) {
+            checkVpnAndActivate();
+        } else {
+            ScheduleManager.cancelAll(this);
+            Intent i = new Intent(this, BlockVpnService.class);
+            i.setAction(BlockVpnService.ACTION_STOP);
+            startService(i);
+        }
+        updateUI();
+    }
+
     private void updateUI() {
         PrefsManager p       = PrefsManager.getInstance();
         boolean enabled      = p.isEnabled(this);
@@ -129,19 +131,7 @@ public class MainActivity extends AppCompatActivity {
         // Prevent toggle listener from firing during programmatic update
         switchEnable.setOnCheckedChangeListener(null);
         switchEnable.setChecked(enabled);
-        switchEnable.setOnCheckedChangeListener((btn, isChecked) -> {
-            p.setEnabled(this, isChecked);
-            if (isChecked) {
-                checkVpnAndActivate();
-            } else {
-                ScheduleManager.cancelAll(this);
-                // Stop VPN if it's currently running
-                Intent i = new Intent(this, BlockVpnService.class);
-                i.setAction(BlockVpnService.ACTION_STOP);
-                startService(i);
-            }
-            updateUI();
-        });
+        switchEnable.setOnCheckedChangeListener(this::onSwitchEnableChanged);
 
         // Status card
         if (!enabled) {

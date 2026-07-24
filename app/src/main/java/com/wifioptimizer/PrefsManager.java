@@ -49,7 +49,7 @@ public class PrefsManager {
     }
 
     // ─── App State ─────────────────────────────────────────────────────────────
-    public boolean isEnabled(Context c) { return prefs(c).getBoolean("enabled", true); }
+    public boolean isEnabled(Context c) { return prefs(c).getBoolean("enabled", false); }
     public void setEnabled(Context c, boolean value) { prefs(c).edit().putBoolean("enabled", value).apply(); }
 
     // ─── First Run Onboarding ──────────────────────────────────────────────────
@@ -70,19 +70,7 @@ public class PrefsManager {
         prefs(c).edit().putStringSet("blocked_apps", new HashSet<>(packages)).apply();
     }
 
-    /** NEW — atomic add; removes the read-modify-write race between callers. */
-    public synchronized void addBlockedApp(Context c, String packageName) {
-        Set<String> current = getBlockedApps(c);
-        current.add(packageName);
-        setBlockedApps(c, current);
-    }
 
-    /** NEW — atomic remove, same reasoning as addBlockedApp. */
-    public synchronized void removeBlockedApp(Context c, String packageName) {
-        Set<String> current = getBlockedApps(c);
-        current.remove(packageName);
-        setBlockedApps(c, current);
-    }
 
     // ─── Dynamic Schedules ─────────────────────────────────────────────────────
 
