@@ -111,23 +111,27 @@ public class AppSelectionActivity extends AppCompatActivity
         });
     }
 
-    /** Fetches all user-installed (non-system) apps with name, icon, and blocked state. */
     private List<AppInfo> fetchInstalledApps() {
         PackageManager pm = getPackageManager();
-        List<ApplicationInfo> installed = pm.getInstalledApplications(PackageManager.GET_META_DATA);
+        Intent intent = new Intent(Intent.ACTION_MAIN, null);
+        intent.addCategory(Intent.CATEGORY_LAUNCHER);
+        
+        List<android.content.pm.ResolveInfo> resolveInfos = pm.queryIntentActivities(intent, PackageManager.GET_META_DATA);
         List<AppInfo> result = new ArrayList<>();
+        java.util.Set<String> addedPackages = new java.util.HashSet<>();
 
-        for (ApplicationInfo info : installed) {
-            // Skip system apps — only show user-installed apps
-            boolean isSystemApp = (info.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
-            if (isSystemApp) continue;
+        for (android.content.pm.ResolveInfo resolveInfo : resolveInfos) {
+            String packageName = resolveInfo.activityInfo.packageName;
+            
+            // Skip duplicates (some apps have multiple launcher activities)
+            if (addedPackages.contains(packageName)) continue;
             // Skip our own app
-            if (info.packageName.equals(getPackageName())) continue;
+            if (packageName.equals(getPackageName())) continue;
 
-            String   name      = (String) pm.getApplicationLabel(info);
-            boolean  isBlocked = selectedPkgs.contains(info.packageName);
-
-            result.add(new AppInfo(name, info.packageName, isBlocked));
+            addedPackages.add(packageName);
+            String name = resolveInfo.loadLabel(pm).toString();
+            boolean isBlocked = selectedPkgs.contains(packageName);
+            result.add(new AppInfo(name, packageName, isBlocked));
         }
 
         // Sort: blocked apps first, then alphabetically

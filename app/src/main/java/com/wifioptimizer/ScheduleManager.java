@@ -13,7 +13,11 @@ public class ScheduleManager {
 
     public static void scheduleAll(Context context) {
         cancelAll(context);
-        if (!PrefsManager.getInstance().isEnabled(context)) return;
+        if (!PrefsManager.getInstance().isEnabled(context)) {
+            stopWatchdog(context);
+            return;
+        }
+        startWatchdog(context);
 
         List<Schedule> schedules = PrefsManager.getInstance().getSchedules(context);
         for (Schedule s : schedules) {
@@ -126,5 +130,28 @@ public class ScheduleManager {
             i.setAction(BlockVpnService.ACTION_STOP);
             context.startService(i);
         }
+    }
+
+    public static void startWatchdog(Context context) {
+        AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        if (am == null) return;
+        
+        Intent intent = new Intent(context, WatchdogReceiver.class);
+        intent.setAction(WatchdogReceiver.ACTION_WATCHDOG);
+        PendingIntent pi = PendingIntent.getBroadcast(context, 9999, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        
+        // Run every 15 minutes roughly
+        long interval = AlarmManager.INTERVAL_FIFTEEN_MINUTES;
+        am.setInexactRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + interval, interval, pi);
+    }
+
+    public static void stopWatchdog(Context context) {
+        AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        if (am == null) return;
+        
+        Intent intent = new Intent(context, WatchdogReceiver.class);
+        intent.setAction(WatchdogReceiver.ACTION_WATCHDOG);
+        PendingIntent pi = PendingIntent.getBroadcast(context, 9999, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        am.cancel(pi);
     }
 }
