@@ -24,7 +24,7 @@ public class BootReceiver extends BroadcastReceiver {
         if (!isBootEvent) return;
         if (!PrefsManager.getInstance().isEnabled(context)) return;
 
-        // Re-register all 4 alarms (lost after reboot)
+        // Re-register all alarms (lost after reboot)
         ScheduleManager.scheduleAll(context);
 
         // If reboot happened during a block window AND VPN permission is already granted,

@@ -180,6 +180,7 @@ public class AppSelectionActivity extends AppCompatActivity
         // Reschedule alarms with the updated app list applied
         if (PrefsManager.getInstance().isEnabled(this)) {
             ScheduleManager.scheduleAll(this);
+            ScheduleManager.syncVpnState(this);
         }
 
         Toast.makeText(this, "Saved! " + selectedPkgs.size() + " apps will be blocked.", Toast.LENGTH_SHORT).show();
@@ -198,6 +199,9 @@ public class AppSelectionActivity extends AppCompatActivity
     @Override
     protected void onDestroy() {
         executor.shutdown();
+        if (adapter != null) {
+            adapter.shutdown();
+        }
         super.onDestroy();
     }
 }

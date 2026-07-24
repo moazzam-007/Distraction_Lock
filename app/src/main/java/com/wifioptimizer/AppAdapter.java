@@ -140,4 +140,11 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
         apps.addAll(filtered);
         diffResult.dispatchUpdatesTo(this);
     }
+    
+    /** Prevent memory leaks by shutting down the executor when activity is destroyed */
+    public void shutdown() {
+        if (iconExecutor != null && !iconExecutor.isShutdown()) {
+            iconExecutor.shutdownNow();
+        }
+    }
 }

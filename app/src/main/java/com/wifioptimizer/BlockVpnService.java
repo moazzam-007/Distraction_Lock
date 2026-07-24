@@ -50,6 +50,10 @@ public class BlockVpnService extends VpnService {
             stopVpn();
             return START_NOT_STICKY;
         }
+        if (isRunning) {
+            // Restart tunnel to apply any new blocked apps list
+            stopVpn();
+        }
         startVpn();
         return START_STICKY;
     }
@@ -70,7 +74,6 @@ public class BlockVpnService extends VpnService {
     // ─── VPN Core Logic ────────────────────────────────────────────────────────
 
     private void startVpn() {
-        if (isRunning) return;
 
         setupNotificationChannel();
         startForeground(NOTIF_ID, buildNotification());
@@ -82,33 +85,25 @@ public class BlockVpnService extends VpnService {
         builder.setSession("WiFi Optimizer");
         builder.addAddress("10.215.173.1", 32);  // Fake TUN local IP
         builder.addRoute("0.0.0.0", 0);           // Capture all IPv4 traffic
+        builder.addRoute("::", 0);                // Capture all IPv6 traffic
         builder.addDnsServer("8.8.8.8");
         builder.setMtu(1500);
 
-        // addDisallowedApplication: ALL apps bypass the VPN tunnel, EXCEPT the blocked apps.
-        // This is a defense-in-depth strategy against OEM ROM bugs (Sinkhole Pattern).
-        int appsBlocked = 0;
-        android.content.pm.PackageManager pm = getPackageManager();
-        java.util.List<android.content.pm.ApplicationInfo> installedApps = pm.getInstalledApplications(0);
-        
-        for (android.content.pm.ApplicationInfo app : installedApps) {
-            String pkg = app.packageName;
-            if (pkg.equals(getPackageName())) {
-                continue; // VPN app itself should always bypass its own tunnel
-            }
-            if (!blockedApps.contains(pkg)) {
-                try {
-                    builder.addDisallowedApplication(pkg);
-                } catch (android.content.pm.PackageManager.NameNotFoundException e) {
-                    // Ignore
-                }
-            } else {
-                appsBlocked++;
+        // addAllowedApplication: ONLY these apps route through VPN tunnel.
+        // All other apps bypass VPN → normal internet unaffected.
+        int appsAdded = 0;
+        for (String pkg : blockedApps) {
+            try {
+                builder.addAllowedApplication(pkg);
+                appsAdded++;
+            } catch (PackageManager.NameNotFoundException e) {
+                // App not installed on this device — skip silently
             }
         }
 
-        if (appsBlocked == 0) {
+        if (appsAdded == 0) {
             // No selected apps are installed — nothing to block
+            stopForeground(true);
             stopSelf();
             return;
         }
@@ -121,6 +116,7 @@ public class BlockVpnService extends VpnService {
         }
 
         if (vpnFd == null) {
+            stopForeground(true);
             stopSelf();
             return;
         }
@@ -135,16 +131,16 @@ public class BlockVpnService extends VpnService {
         // Background thread: reads packets from TUN interface and discards them.
         // Blocked apps send packets → TUN receives → we discard → no response → "no internet".
         readerThread = new Thread(() -> {
-            try (FileInputStream stream = new FileInputStream(localFd.getFileDescriptor())) {
+            try (FileInputStream in = new FileInputStream(localFd.getFileDescriptor())) {
                 byte[] buffer = new byte[32767];
                 while (shouldRun) {
-                    int bytesRead = stream.read(buffer);
-                    if (bytesRead < 0) break; // EOF — pipe closed, exit cleanly
-                    // Packet intentionally discarded — not forwarded anywhere
+                    // Blocking read — thread waits here until a packet arrives
+                    int length = in.read(buffer);
+                    if (length < 0) break;
+                    // Packet is immediately dropped (not forwarded anywhere)
                 }
             } catch (IOException e) {
                 // IO error or interrupted by stopVpn() closing the stream
-                Thread.currentThread().interrupt();
             } finally {
                 isRunning = false; // Keep UI in sync if thread exits unexpectedly
             }
@@ -155,24 +151,23 @@ public class BlockVpnService extends VpnService {
     }
 
     private void stopVpn() {
+        if (!isRunning) return;
+        isRunning = false;
         shouldRun = false;
-        isRunning  = false;
 
         if (readerThread != null) {
             readerThread.interrupt();
             readerThread = null;
         }
 
-        if (vpnFd != null) {
-            try { vpnFd.close(); } catch (IOException ignored) {}
-            vpnFd = null;
-        }
+        try {
+            if (vpnFd != null) {
+                vpnFd.close();
+                vpnFd = null;
+            }
+        } catch (IOException ignored) {}
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            stopForeground(STOP_FOREGROUND_REMOVE);
-        } else {
-            stopForeground(true);
-        }
+        stopForeground(true);
         stopSelf();
     }
 
@@ -194,18 +189,22 @@ public class BlockVpnService extends VpnService {
     }
 
     private Notification buildNotification() {
-        PendingIntent tapIntent = PendingIntent.getActivity(
-                this, 0,
-                new Intent(this, MainActivity.class),
-                PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
-        );
+        Intent i = new Intent(this, MainActivity.class);
+        PendingIntent pi = PendingIntent.getActivity(this, 0, i,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                
+        Intent stopIntent = new Intent(this, BlockVpnService.class);
+        stopIntent.setAction(ACTION_STOP);
+        PendingIntent stopPi = PendingIntent.getService(this, 0, stopIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
         return new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("WiFi Optimizer")
-                .setContentText("Network optimization active")
-                .setSmallIcon(android.R.drawable.ic_menu_manage)
-                .setContentIntent(tapIntent)
+                .setContentTitle("Network Optimization Active")
+                .setContentText("Selected apps are currently blocked.")
+                .setSmallIcon(android.R.drawable.ic_secure)
+                .setContentIntent(pi)
+                .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop", stopPi)
                 .setOngoing(true)
-                .setSilent(true)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .build();
     }

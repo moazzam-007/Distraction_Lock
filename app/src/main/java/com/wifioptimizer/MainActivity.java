@@ -24,7 +24,7 @@ import com.google.android.material.switchmaterial.SwitchMaterial;
 public class MainActivity extends AppCompatActivity {
 
     private TextView       tvStatus, tvStatusSub, tvStatusDot;
-    private TextView       tvSlot1, tvSlot2, tvAppsCount;
+    private TextView       tvAppsCount;
     private SwitchMaterial switchEnable;
     private MaterialButton btnGrantVpn;
     private MaterialCardView cardStatus;
@@ -78,7 +78,6 @@ public class MainActivity extends AppCompatActivity {
         tvStatus     = findViewById(R.id.tvStatus);
         tvStatusSub  = findViewById(R.id.tvStatusSub);
         tvStatusDot  = findViewById(R.id.tvStatusDot);
-        tvStatusDot  = findViewById(R.id.tvStatusDot);
         tvAppsCount  = findViewById(R.id.tvAppsCount);
         switchEnable = findViewById(R.id.switchEnable);
         btnGrantVpn  = findViewById(R.id.btnGrantVpn);
@@ -125,8 +124,15 @@ public class MainActivity extends AppCompatActivity {
         switchEnable.setChecked(enabled);
         switchEnable.setOnCheckedChangeListener((btn, isChecked) -> {
             p.setEnabled(this, isChecked);
-            if (isChecked) checkVpnAndActivate();
-            else { ScheduleManager.cancelAll(this); stopVpnNow(); }
+            if (isChecked) {
+                checkVpnAndActivate();
+            } else {
+                ScheduleManager.cancelAll(this);
+                // Stop VPN if it's currently running
+                Intent i = new Intent(this, BlockVpnService.class);
+                i.setAction(BlockVpnService.ACTION_STOP);
+                startService(i);
+            }
             updateUI();
         });
 
@@ -205,9 +211,6 @@ public class MainActivity extends AppCompatActivity {
         // Apps count
         tvAppsCount.setText(blockedCount + " app" + (blockedCount != 1 ? "s" : "") + " selected to block");
 
-        // Permission button
-        btnGrantVpn.setEnabled(!vpnGranted && enabled);
-        btnGrantVpn.setAlpha(!vpnGranted && enabled ? 1f : 0.4f);
     }
 
     private void setStatus(String title, String subtitle, int bgColor, int dotColor) {
@@ -220,29 +223,16 @@ public class MainActivity extends AppCompatActivity {
     // ─── VPN Control ───────────────────────────────────────────────────────────
 
     private void checkVpnAndActivate() {
-        Intent vpnIntent = VpnService.prepare(this);
+        Intent vpnIntent = android.net.VpnService.prepare(this);
         if (vpnIntent == null) {
             // Permission already granted
             PrefsManager.getInstance().setVpnPermissionGranted(this, true);
             ScheduleManager.scheduleAll(this);
-            if (ScheduleManager.isInBlockWindow(this)) startVpnNow();
+            ScheduleManager.syncVpnState(this);
         } else {
             vpnPermLauncher.launch(vpnIntent);
         }
         updateUI();
-    }
-
-    private void startVpnNow() {
-        Intent i = new Intent(this, BlockVpnService.class);
-        i.setAction(BlockVpnService.ACTION_START);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(i);
-        else startService(i);
-    }
-
-    private void stopVpnNow() {
-        Intent i = new Intent(this, BlockVpnService.class);
-        i.setAction(BlockVpnService.ACTION_STOP);
-        startService(i);
     }
 
     private void requestNotificationPermission() {
