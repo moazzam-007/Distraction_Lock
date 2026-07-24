@@ -1,0 +1,35 @@
+<resources>
+    <!-- Backgrounds -->
+    <color name="bg_dark">#0F1117</color>
+    <color name="card_surface">#1C1E2A</color>
+    <color name="card_info">#161820</color>
+    <color name="divider">#2A2D3E</color>
+
+    <!-- Status card backgrounds -->
+    <color name="card_active">#0D2B1A</color>
+    <color name="card_scheduled">#0D1A2B</color>
+    <color name="card_inactive">#1C1E2A</color>
+    <color name="card_warning">#2B1A0D</color>
+
+    <!-- Status dots -->
+    <color name="dot_active">#34D399</color>
+    <color name="dot_scheduled">#60A5FA</color>
+    <color name="dot_inactive">#6B7280</color>
+    <color name="dot_warning">#FBBF24</color>
+
+    <!-- Text -->
+    <color name="text_primary">#F1F5F9</color>
+    <color name="text_secondary">#94A3B8</color>
+
+    <!-- Accent -->
+    <color name="accent_blue">#3B82F6</color>
+
+    <!-- Legacy (required by theme) -->
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+</resources>
