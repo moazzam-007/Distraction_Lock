@@ -132,11 +132,9 @@ public class BlockVpnService extends VpnService {
                     if (bytesRead < 0) break; // EOF — pipe closed, exit cleanly
                     // Packet intentionally discarded — not forwarded anywhere
                 }
-            } catch (InterruptedException e) {
-                // Normal shutdown — interrupted by stopVpn()
-                Thread.currentThread().interrupt();
             } catch (IOException e) {
-                // IO error — exit thread cleanly
+                // IO error or interrupted by stopVpn() closing the stream
+                Thread.currentThread().interrupt();
             } finally {
                 isRunning = false; // Keep UI in sync if thread exits unexpectedly
             }
