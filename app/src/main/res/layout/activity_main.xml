@@ -193,41 +193,27 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="⏰  Schedule"
+                        android:text="⏰  Schedules"
                         android:textColor="@color/text_primary"
                         android:textSize="15sp"
                         android:textStyle="bold" />
                     <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnEditSchedule"
+                        android:id="@+id/btnAddSchedule"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Edit"
+                        android:text="Add"
                         android:textSize="13sp"
                         app:cornerRadius="10dp"
                         style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
                 </LinearLayout>
-                <TextView
-                    android:id="@+id/tvSlot1"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="🌤  03:00 PM  →  05:00 PM"
-                    android:textColor="@color/text_primary"
-                    android:textSize="14sp"
-                    android:fontFamily="monospace"
-                    android:layout_marginBottom="8dp" />
-                <View
+
+                <!-- Dynamic container for schedules -->
+                <LinearLayout
+                    android:id="@+id/scheduleContainer"
                     android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="@color/divider"
-                    android:layout_marginBottom="8dp" />
-                <TextView
-                    android:id="@+id/tvSlot2"
-                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="🌙  11:00 PM  →  03:00 AM"
-                    android:textColor="@color/text_primary"
-                    android:textSize="14sp"
-                    android:fontFamily="monospace" />
+                    android:orientation="vertical" />
+
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

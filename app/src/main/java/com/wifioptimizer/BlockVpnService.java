@@ -85,19 +85,29 @@ public class BlockVpnService extends VpnService {
         builder.addDnsServer("8.8.8.8");
         builder.setMtu(1500);
 
-        // addAllowedApplication: ONLY these apps route through VPN tunnel.
-        // All other apps bypass VPN → normal internet unaffected.
-        int appsAdded = 0;
-        for (String pkg : blockedApps) {
-            try {
-                builder.addAllowedApplication(pkg);
-                appsAdded++;
-            } catch (PackageManager.NameNotFoundException e) {
-                // App not installed on this device — skip silently
+        // addDisallowedApplication: ALL apps bypass the VPN tunnel, EXCEPT the blocked apps.
+        // This is a defense-in-depth strategy against OEM ROM bugs (Sinkhole Pattern).
+        int appsBlocked = 0;
+        android.content.pm.PackageManager pm = getPackageManager();
+        java.util.List<android.content.pm.ApplicationInfo> installedApps = pm.getInstalledApplications(0);
+        
+        for (android.content.pm.ApplicationInfo app : installedApps) {
+            String pkg = app.packageName;
+            if (pkg.equals(getPackageName())) {
+                continue; // VPN app itself should always bypass its own tunnel
+            }
+            if (!blockedApps.contains(pkg)) {
+                try {
+                    builder.addDisallowedApplication(pkg);
+                } catch (android.content.pm.PackageManager.NameNotFoundException e) {
+                    // Ignore
+                }
+            } else {
+                appsBlocked++;
             }
         }
 
-        if (appsAdded == 0) {
+        if (appsBlocked == 0) {
             // No selected apps are installed — nothing to block
             stopSelf();
             return;
