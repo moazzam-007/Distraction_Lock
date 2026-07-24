@@ -159,11 +159,18 @@ public class OnboardingActivity extends AppCompatActivity {
     private void updateSchedulePreview() {
         PrefsManager p = PrefsManager.getInstance();
         TextView tvScheduleSummary = findViewById(R.id.tvScheduleSummary);
-        String slot1 = p.formatTime(p.getS1StartH(this), p.getS1StartM(this))
-                + " – " + p.formatTime(p.getS1EndH(this), p.getS1EndM(this));
-        String slot2 = p.formatTime(p.getS2StartH(this), p.getS2StartM(this))
-                + " – " + p.formatTime(p.getS2EndH(this), p.getS2EndM(this));
-        tvScheduleSummary.setText("🌤  " + slot1 + "\n🌙  " + slot2);
+        java.util.List<Schedule> schedules = p.getSchedules(this);
+        
+        if (schedules.isEmpty()) {
+            tvScheduleSummary.setText("No schedules set");
+        } else {
+            StringBuilder sb = new StringBuilder();
+            for (Schedule s : schedules) {
+                sb.append("⏰ ").append(p.formatTime(s.getStartHour(), s.getStartMinute()))
+                  .append(" – ").append(p.formatTime(s.getEndHour(), s.getEndMinute())).append("\n");
+            }
+            tvScheduleSummary.setText(sb.toString().trim());
+        }
     }
 
     // ─── Finish ────────────────────────────────────────────────────────────────
@@ -179,8 +186,9 @@ public class OnboardingActivity extends AppCompatActivity {
         p.setFirstRunDone(this);
         p.setEnabled(this, true);
 
-        // Schedule all 4 alarms
+        // Schedule all alarms and sync VPN state immediately
         ScheduleManager.scheduleAll(this);
+        ScheduleManager.syncVpnState(this);
 
         // Go to main screen
         startActivity(new Intent(this, MainActivity.class));

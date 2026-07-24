@@ -11,7 +11,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.button.MaterialButton;
 
 import java.util.List;
-import java.util.UUID;
 
 public class ScheduleEditActivity extends AppCompatActivity {
 
@@ -120,6 +119,7 @@ public class ScheduleEditActivity extends AppCompatActivity {
 
         PrefsManager.getInstance().saveSchedules(this, schedules);
         ScheduleManager.scheduleAll(this);
+        ScheduleManager.syncVpnState(this);
         Toast.makeText(this, "Schedule saved", Toast.LENGTH_SHORT).show();
         finish();
     }
@@ -130,6 +130,7 @@ public class ScheduleEditActivity extends AppCompatActivity {
         schedules.removeIf(s -> s.getId().equals(scheduleId));
         PrefsManager.getInstance().saveSchedules(this, schedules);
         ScheduleManager.scheduleAll(this);
+        ScheduleManager.syncVpnState(this);
         Toast.makeText(this, "Schedule deleted", Toast.LENGTH_SHORT).show();
         finish();
     }

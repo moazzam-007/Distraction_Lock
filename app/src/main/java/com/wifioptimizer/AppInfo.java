@@ -1,6 +1,6 @@
 package com.wifioptimizer;
 
-import android.graphics.drawable.Drawable;
+
 
 /**
  * AppInfo — POJO / Model class representing an installed application.

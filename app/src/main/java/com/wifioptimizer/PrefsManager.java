@@ -113,7 +113,7 @@ public class PrefsManager {
                 schedules.add(s);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            android.util.Log.e("PrefsManager", "Error parsing schedules", e);
         }
         return schedules;
     }
@@ -133,7 +133,7 @@ public class PrefsManager {
             }
             prefs(c).edit().putString("schedules", array.toString()).apply();
         } catch (Exception e) {
-            e.printStackTrace();
+            android.util.Log.e("PrefsManager", "Error saving schedules", e);
         }
     }
 

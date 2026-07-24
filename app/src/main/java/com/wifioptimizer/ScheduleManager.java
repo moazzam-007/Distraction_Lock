@@ -18,7 +18,7 @@ public class ScheduleManager {
         List<Schedule> schedules = PrefsManager.getInstance().getSchedules(context);
         for (Schedule s : schedules) {
             if (s.isEnabled()) {
-                int baseRc = Math.abs(s.getId().hashCode());
+                int baseRc = s.getId().hashCode() & 0x7FFFFFFF;
                 scheduleAlarm(context, s.getId(), s.getStartHour(), s.getStartMinute(), ScheduleReceiver.ACTION_START, baseRc);
                 scheduleAlarm(context, s.getId(), s.getEndHour(), s.getEndMinute(), ScheduleReceiver.ACTION_STOP, baseRc + 1);
             }
@@ -31,7 +31,7 @@ public class ScheduleManager {
 
         List<Schedule> schedules = PrefsManager.getInstance().getSchedules(context);
         for (Schedule s : schedules) {
-            int baseRc = Math.abs(s.getId().hashCode());
+            int baseRc = s.getId().hashCode() & 0x7FFFFFFF;
             am.cancel(buildPendingIntent(context, ScheduleReceiver.ACTION_START, baseRc, s.getId(), 0, 0));
             am.cancel(buildPendingIntent(context, ScheduleReceiver.ACTION_STOP, baseRc + 1, s.getId(), 0, 0));
         }
@@ -109,5 +109,22 @@ public class ScheduleManager {
             }
         }
         return false;
+    }
+
+    public static void syncVpnState(Context context) {
+        if (!PrefsManager.getInstance().isVpnPermissionGranted(context)) return;
+        
+        Intent i = new Intent(context, BlockVpnService.class);
+        if (isInBlockWindow(context)) {
+            i.setAction(BlockVpnService.ACTION_START);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(i);
+            } else {
+                context.startService(i);
+            }
+        } else {
+            i.setAction(BlockVpnService.ACTION_STOP);
+            context.startService(i);
+        }
     }
 }
