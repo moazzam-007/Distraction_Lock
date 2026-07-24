@@ -18,3 +18,7 @@ local.properties
 app/build/
 codebase_for_review.txt
 aggregate_code.py
+
+# Unnecessary files and bloat
+temp/
+.agents/
