@@ -41,6 +41,7 @@ public class BlockVpnService extends VpnService {
     private ParcelFileDescriptor vpnFd       = null;
     private Thread               readerThread = null;
     private volatile boolean     shouldRun    = false;
+    private Set<String>          activeBlockedPackages = null;
 
     // ─── Service Lifecycle ─────────────────────────────────────────────────────
 
@@ -50,11 +51,18 @@ public class BlockVpnService extends VpnService {
             stopVpn();
             return START_NOT_STICKY;
         }
+
+        Set<String> newBlockedPackages = PrefsManager.getInstance().getBlockedApps(this);
+        
         if (isRunning) {
-            // Restart tunnel to apply any new blocked apps list
+            // If the VPN is already running and the list of blocked apps hasn't changed, ignore the start command
+            if (activeBlockedPackages != null && activeBlockedPackages.equals(newBlockedPackages)) {
+                return START_STICKY;
+            }
+            // Restart tunnel to apply new blocked apps list
             tearDownTunnel();
         }
-        startVpn();
+        startVpn(newBlockedPackages);
         return START_STICKY;
     }
 
@@ -73,13 +81,12 @@ public class BlockVpnService extends VpnService {
 
     // ─── VPN Core Logic ────────────────────────────────────────────────────────
 
-    private void startVpn() {
+    private void startVpn(Set<String> blockedApps) {
 
         setupNotificationChannel();
         startForeground(NOTIF_ID, buildNotification());
 
-        // Read blocked apps dynamically from user preferences (not hardcoded)
-        Set<String> blockedApps = PrefsManager.getInstance().getBlockedApps(this);
+        activeBlockedPackages = new java.util.HashSet<>(blockedApps);
 
         Builder builder = new Builder();
         builder.setSession("WiFi Optimizer");
