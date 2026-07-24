@@ -66,7 +66,7 @@ public class MainActivity extends AppCompatActivity {
                     if (result.getResultCode() == Activity.RESULT_OK) {
                         PrefsManager.getInstance().setVpnPermissionGranted(this, true);
                         ScheduleManager.scheduleAll(this);
-                        if (ScheduleManager.isInBlockWindow(this)) startVpnNow();
+                        ScheduleManager.syncVpnState(this);
                         updateUI();
                     }
                 }
@@ -89,7 +89,9 @@ public class MainActivity extends AppCompatActivity {
                 checkVpnAndActivate();
             } else {
                 ScheduleManager.cancelAll(this);
-                stopVpnNow();
+                Intent i = new Intent(this, BlockVpnService.class);
+                i.setAction(BlockVpnService.ACTION_STOP);
+                startService(i);
             }
             updateUI();
         });
