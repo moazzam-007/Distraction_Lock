@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_dark">
+
+    <!-- ═══ STEP 1: Welcome + VPN Permission ═══ -->
+    <LinearLayout
+        android:id="@+id/stepView1"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="32dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="📶"
+            android:textSize="72sp"
+            android:layout_marginBottom="24dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="WiFi Optimizer"
+            android:textColor="@color/text_primary"
+            android:textSize="30sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Manage which apps can access the internet and when. Set schedules to automatically limit distracting apps."
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp"
+            android:gravity="center"
+            android:lineSpacingExtra="4dp"
+            android:layout_marginBottom="40dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnGrantVpn"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Grant Network Permission"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp"
+            app:cornerRadius="14dp"
+            app:backgroundTint="@color/accent_blue" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Required to manage app network access"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <!-- ═══ STEP 2: Select Apps ═══ -->
+    <LinearLayout
+        android:id="@+id/stepView2"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="32dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🚫"
+            android:textSize="72sp"
+            android:layout_marginBottom="24dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Select Apps to Block"
+            android:textColor="@color/text_primary"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Choose which apps will be blocked during scheduled hours. You can always change this later."
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp"
+            android:gravity="center"
+            android:lineSpacingExtra="4dp"
+            android:layout_marginBottom="40dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSelectApps"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Choose Apps →"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            app:cornerRadius="14dp"
+            app:backgroundTint="@color/accent_blue" />
+    </LinearLayout>
+
+    <!-- ═══ STEP 3: Schedule Confirm + Finish ═══ -->
+    <LinearLayout
+        android:id="@+id/stepView3"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="32dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⏰"
+            android:textSize="72sp"
+            android:layout_marginBottom="24dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Schedule Ready"
+            android:textColor="@color/text_primary"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Default blocking schedule:"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:id="@+id/tvScheduleSummary"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🌤  03:00 PM – 05:00 PM\n🌙  11:00 PM – 03:00 AM"
+            android:textColor="@color/text_primary"
+            android:textSize="16sp"
+            android:fontFamily="monospace"
+            android:gravity="center"
+            android:lineSpacingExtra="6dp"
+            android:layout_marginBottom="24dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnEditScheduleOnboard"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="Customize Schedule"
+            android:textSize="14sp"
+            android:layout_marginBottom="12dp"
+            app:cornerRadius="12dp"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnFinish"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="✓ Start Optimizing"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            app:cornerRadius="14dp"
+            app:backgroundTint="@color/dot_active" />
+    </LinearLayout>
+
+    <!-- Step Indicator Dots (bottom of screen) -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:orientation="horizontal"
+        android:layout_marginBottom="32dp"
+        android:gravity="center">
+
+        <View
+            android:id="@+id/dot1"
+            android:layout_width="10dp"
+            android:layout_height="10dp"
+            android:layout_marginHorizontal="5dp"
+            android:background="@drawable/dot_indicator"
+            android:alpha="1.0" />
+        <View
+            android:id="@+id/dot2"
+            android:layout_width="10dp"
+            android:layout_height="10dp"
+            android:layout_marginHorizontal="5dp"
+            android:background="@drawable/dot_indicator"
+            android:alpha="0.3" />
+        <View
+            android:id="@+id/dot3"
+            android:layout_width="10dp"
+            android:layout_height="10dp"
+            android:layout_marginHorizontal="5dp"
+            android:background="@drawable/dot_indicator"
+            android:alpha="0.3" />
+    </LinearLayout>
+
+</FrameLayout>
