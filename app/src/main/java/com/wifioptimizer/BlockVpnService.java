@@ -61,10 +61,10 @@ public class BlockVpnService extends VpnService {
     }
 
     @Override
-    public void onRevoked() {
-        // Called when user revokes VPN permission from system settings
+    public void onRevoke() {
         stopVpn();
-        super.onRevoked();
+        PrefsManager.getInstance().setVpnPermissionGranted(this, false);
+        super.onRevoke();
     }
 
     // ─── VPN Core Logic ────────────────────────────────────────────────────────
@@ -119,12 +119,13 @@ public class BlockVpnService extends VpnService {
         shouldRun = true;
 
         // Capture fd reference locally to avoid NPE if stopVpn() nulls it on another thread
-        final ParcelFileDescriptor localFd = vpnFd;
+        ParcelFileDescriptor localFd = vpnFd;
+        if (localFd == null) return;
 
         // Background thread: reads packets from TUN interface and discards them.
         // Blocked apps send packets → TUN receives → we discard → no response → "no internet".
         readerThread = new Thread(() -> {
-            try (FileInputStream stream = new FileInputStream(localFd.fileDescriptor)) {
+            try (FileInputStream stream = new FileInputStream(localFd.getFileDescriptor())) {
                 byte[] buffer = new byte[32767];
                 while (shouldRun) {
                     int bytesRead = stream.read(buffer);
