@@ -54,6 +54,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        // Ensure VPN is running if it should be (revival if killed by system booster)
+        if (PrefsManager.getInstance().isEnabled(this)) {
+            ScheduleManager.syncVpnState(this);
+        }
         // Refresh UI every time we return to this screen (e.g. after editing apps/schedule)
         updateUI();
     }

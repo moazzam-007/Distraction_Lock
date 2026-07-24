@@ -82,6 +82,11 @@
             android:name=".ScheduleReceiver"
             android:exported="false" />
 
+        <!-- Watchdog Receiver for periodic VPN checks -->
+        <receiver
+            android:name=".WatchdogReceiver"
+            android:exported="false" />
+
         <!-- Boot Receiver — restores alarms after reboot -->
         <receiver
             android:name=".BootReceiver"

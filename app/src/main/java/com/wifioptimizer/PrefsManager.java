@@ -27,10 +27,7 @@ public class PrefsManager {
     private static final int DEF_S2_SH = 23, DEF_S2_SM = 0;
     private static final int DEF_S2_EH = 3,  DEF_S2_EM = 0;
 
-    private static final Set<String> DEFAULT_BLOCKED = new HashSet<>(Arrays.asList(
-            "com.instagram.android",
-            "com.google.android.youtube"
-    ));
+    private static final Set<String> DEFAULT_BLOCKED = new HashSet<>();
 
     private PrefsManager() { }
 
