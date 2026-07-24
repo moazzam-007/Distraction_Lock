@@ -78,8 +78,7 @@ public class MainActivity extends AppCompatActivity {
         tvStatus     = findViewById(R.id.tvStatus);
         tvStatusSub  = findViewById(R.id.tvStatusSub);
         tvStatusDot  = findViewById(R.id.tvStatusDot);
-        tvSlot1      = findViewById(R.id.tvSlot1);
-        tvSlot2      = findViewById(R.id.tvSlot2);
+        tvStatusDot  = findViewById(R.id.tvStatusDot);
         tvAppsCount  = findViewById(R.id.tvAppsCount);
         switchEnable = findViewById(R.id.switchEnable);
         btnGrantVpn  = findViewById(R.id.btnGrantVpn);
@@ -105,9 +104,9 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(new Intent(this, AppSelectionActivity.class))
         );
 
-        // Edit schedule button
-        MaterialButton btnEditSchedule = findViewById(R.id.btnEditSchedule);
-        btnEditSchedule.setOnClickListener(v ->
+        // Add schedule button
+        MaterialButton btnAddSchedule = findViewById(R.id.btnAddSchedule);
+        btnAddSchedule.setOnClickListener(v ->
                 startActivity(new Intent(this, ScheduleEditActivity.class))
         );
     }
@@ -146,11 +145,62 @@ public class MainActivity extends AppCompatActivity {
                     getColor(R.color.card_scheduled), getColor(R.color.dot_scheduled));
         }
 
-        // Schedule
-        tvSlot1.setText("🌤  " + p.formatTime(p.getS1StartH(this), p.getS1StartM(this))
-                + "  →  " + p.formatTime(p.getS1EndH(this),   p.getS1EndM(this)));
-        tvSlot2.setText("🌙  " + p.formatTime(p.getS2StartH(this), p.getS2StartM(this))
-                + "  →  " + p.formatTime(p.getS2EndH(this),   p.getS2EndM(this)));
+        // Dynamic Schedules
+        android.widget.LinearLayout scheduleContainer = findViewById(R.id.scheduleContainer);
+        scheduleContainer.removeAllViews();
+        java.util.List<Schedule> schedules = p.getSchedules(this);
+        
+        if (schedules.isEmpty()) {
+            TextView empty = new TextView(this);
+            empty.setText("No schedules set. Optimization runs manually.");
+            empty.setTextColor(getColor(R.color.text_secondary));
+            empty.setTextSize(14f);
+            scheduleContainer.addView(empty);
+        } else {
+            for (Schedule s : schedules) {
+                TextView tv = new TextView(this);
+                tv.setText("⏰ " + p.formatTime(s.getStartHour(), s.getStartMinute()) +
+                           "  →  " + p.formatTime(s.getEndHour(), s.getEndMinute()));
+                tv.setTextColor(getColor(R.color.text_primary));
+                tv.setTextSize(14f);
+                tv.setTypeface(android.graphics.Typeface.MONOSPACE);
+                tv.setPadding(0, 8, 0, 8);
+                
+                // Click to edit
+                tv.setOnClickListener(v -> {
+                    Intent intent = new Intent(this, ScheduleEditActivity.class);
+                    intent.putExtra("schedule_id", s.getId());
+                    startActivity(intent);
+                });
+                
+                scheduleContainer.addView(tv);
+                
+                View divider = new View(this);
+                divider.setLayoutParams(new android.widget.LinearLayout.LayoutParams(
+                        android.widget.LinearLayout.LayoutParams.MATCH_PARENT, 1));
+                divider.setBackgroundColor(getColor(R.color.divider));
+                scheduleContainer.addView(divider);
+            }
+        }
+        
+        // Permission warnings
+        if (!PermissionUtils.hasExactAlarmPermission(this)) {
+            btnGrantVpn.setText("Grant Exact Alarm Permission");
+            btnGrantVpn.setEnabled(true);
+            btnGrantVpn.setAlpha(1f);
+            btnGrantVpn.setOnClickListener(v -> PermissionUtils.requestExactAlarmPermission(this));
+        } else if (!PermissionUtils.hasBatteryOptimizationPermission(this)) {
+            btnGrantVpn.setText("Grant Battery Permission (Required)");
+            btnGrantVpn.setEnabled(true);
+            btnGrantVpn.setAlpha(1f);
+            btnGrantVpn.setOnClickListener(v -> PermissionUtils.requestBatteryOptimizationPermission(this));
+        } else {
+            btnGrantVpn.setText("Grant Network Permission");
+            btnGrantVpn.setOnClickListener(v -> checkVpnAndActivate());
+            // Permission button state
+            btnGrantVpn.setEnabled(!vpnGranted && enabled);
+            btnGrantVpn.setAlpha(!vpnGranted && enabled ? 1f : 0.4f);
+        }
 
         // Apps count
         tvAppsCount.setText(blockedCount + " app" + (blockedCount != 1 ? "s" : "") + " selected to block");

@@ -2,168 +2,135 @@ package com.wifioptimizer;
 
 import android.app.TimePickerDialog;
 import android.os.Bundle;
-import android.view.MenuItem;
+import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
 
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.card.MaterialCardView;
 
-/**
- * ScheduleEditActivity — Allows the user to configure both block time windows.
- * Uses TimePickerDialog (Android's built-in time picker) for each time field.
- * Changes are saved to PrefsManager and alarms are rescheduled on Save.
- */
+import java.util.List;
+import java.util.UUID;
+
 public class ScheduleEditActivity extends AppCompatActivity {
 
-    // Slot 1 current values (shown + editable)
-    private int s1StartH, s1StartM, s1EndH, s1EndM;
-    // Slot 2 current values
-    private int s2StartH, s2StartM, s2EndH, s2EndM;
-
-    // TextViews that display the current time values
-    private TextView tvS1Start, tvS1End, tvS2Start, tvS2End;
+    private TextView tvStart, tvEnd;
+    private MaterialButton btnSave, btnDelete;
+    
+    private int startH = 8, startM = 0;
+    private int endH = 17, endM = 0;
+    
+    private String scheduleId = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_schedule_edit);
 
-        setupToolbar();
-        loadCurrentValues();
-        initViews();
-    }
-
-    // ─── Setup ─────────────────────────────────────────────────────────────────
-
-    private void setupToolbar() {
-        Toolbar toolbar = findViewById(R.id.toolbar);
+        androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            getSupportActionBar().setTitle("Edit Schedule");
+            getSupportActionBar().setDisplayShowTitleEnabled(false);
         }
-    }
+        toolbar.setNavigationOnClickListener(v -> finish());
 
-    /** Load saved times from PrefsManager as starting values. */
-    private void loadCurrentValues() {
-        PrefsManager p = PrefsManager.getInstance();
-        s1StartH = p.getS1StartH(this); s1StartM = p.getS1StartM(this);
-        s1EndH   = p.getS1EndH(this);   s1EndM   = p.getS1EndM(this);
-        s2StartH = p.getS2StartH(this); s2StartM = p.getS2StartM(this);
-        s2EndH   = p.getS2EndH(this);   s2EndM   = p.getS2EndM(this);
-    }
+        tvStart = findViewById(R.id.tvStart);
+        tvEnd   = findViewById(R.id.tvEnd);
+        btnSave = findViewById(R.id.btnSaveSchedule);
+        btnDelete = findViewById(R.id.btnDeleteSchedule);
 
-    private void initViews() {
-        tvS1Start = findViewById(R.id.tvS1Start);
-        tvS1End   = findViewById(R.id.tvS1End);
-        tvS2Start = findViewById(R.id.tvS2Start);
-        tvS2End   = findViewById(R.id.tvS2End);
-
-        refreshTimeLabels();
-
-        // Slot 1 — tap start time
-        MaterialCardView cardS1Start = findViewById(R.id.cardS1Start);
-        cardS1Start.setOnClickListener(v ->
-                showTimePicker(s1StartH, s1StartM, (hour, minute) -> {
-                    s1StartH = hour; s1StartM = minute;
-                    refreshTimeLabels();
-                })
-        );
-
-        // Slot 1 — tap end time
-        MaterialCardView cardS1End = findViewById(R.id.cardS1End);
-        cardS1End.setOnClickListener(v ->
-                showTimePicker(s1EndH, s1EndM, (hour, minute) -> {
-                    s1EndH = hour; s1EndM = minute;
-                    refreshTimeLabels();
-                })
-        );
-
-        // Slot 2 — tap start time
-        MaterialCardView cardS2Start = findViewById(R.id.cardS2Start);
-        cardS2Start.setOnClickListener(v ->
-                showTimePicker(s2StartH, s2StartM, (hour, minute) -> {
-                    s2StartH = hour; s2StartM = minute;
-                    refreshTimeLabels();
-                })
-        );
-
-        // Slot 2 — tap end time
-        MaterialCardView cardS2End = findViewById(R.id.cardS2End);
-        cardS2End.setOnClickListener(v ->
-                showTimePicker(s2EndH, s2EndM, (hour, minute) -> {
-                    s2EndH = hour; s2EndM = minute;
-                    refreshTimeLabels();
-                })
-        );
-
-        // Save button
-        MaterialButton btnSave = findViewById(R.id.btnSaveSchedule);
-        btnSave.setOnClickListener(v -> saveAndFinish());
-    }
-
-    // ─── Time Picker ───────────────────────────────────────────────────────────
-
-    /** Functional interface for time picker callback (Java 8+). */
-    private interface TimePickedCallback {
-        void onTimePicked(int hour, int minute);
-    }
-
-    /** Shows Android's built-in TimePickerDialog (24h format). */
-    private void showTimePicker(int currentHour, int currentMinute, TimePickedCallback callback) {
-        new TimePickerDialog(this,
-                (view, hourOfDay, minute) -> callback.onTimePicked(hourOfDay, minute),
-                currentHour, currentMinute,
-                true  // 24-hour format
-        ).show();
-    }
-
-    /** Refresh all 4 time labels to show current selected values. */
-    private void refreshTimeLabels() {
-        PrefsManager p = PrefsManager.getInstance();
-        tvS1Start.setText(p.formatTime(s1StartH, s1StartM));
-        tvS1End  .setText(p.formatTime(s1EndH,   s1EndM));
-        tvS2Start.setText(p.formatTime(s2StartH, s2StartM));
-        tvS2End  .setText(p.formatTime(s2EndH,   s2EndM));
-    }
-
-    // ─── Save ──────────────────────────────────────────────────────────────────
-
-    private void saveAndFinish() {
-        int s1StartMins = s1StartH * 60 + s1StartM;
-        int s1EndMins   = s1EndH * 60 + s1EndM;
-        int s2StartMins = s2StartH * 60 + s2StartM;
-        int s2EndMins   = s2EndH * 60 + s2EndM;
-
-        if (s1StartMins >= s1EndMins) {
-            Toast.makeText(this, "Slot 1 start time must be before end time.", Toast.LENGTH_LONG).show();
-            return;
+        scheduleId = getIntent().getStringExtra("schedule_id");
+        if (scheduleId != null) {
+            loadExistingSchedule();
+            btnDelete.setVisibility(View.VISIBLE);
+        } else {
+            updateUI();
+            btnDelete.setVisibility(View.GONE);
         }
-        if (s2StartMins == s2EndMins) {
-            Toast.makeText(this, "Slot 2 start and end times cannot be the same.", Toast.LENGTH_LONG).show();
+
+        findViewById(R.id.cardStart).setOnClickListener(v -> pickTime(true));
+        findViewById(R.id.cardEnd).setOnClickListener(v -> pickTime(false));
+        
+        btnSave.setOnClickListener(v -> saveSchedule());
+        btnDelete.setOnClickListener(v -> deleteSchedule());
+    }
+
+    private void loadExistingSchedule() {
+        List<Schedule> schedules = PrefsManager.getInstance().getSchedules(this);
+        for (Schedule s : schedules) {
+            if (s.getId().equals(scheduleId)) {
+                startH = s.getStartHour();
+                startM = s.getStartMinute();
+                endH = s.getEndHour();
+                endM = s.getEndMinute();
+                break;
+            }
+        }
+        updateUI();
+    }
+
+    private void pickTime(boolean isStart) {
+        int h = isStart ? startH : endH;
+        int m = isStart ? startM : endM;
+
+        new TimePickerDialog(this, (view, hourOfDay, minute) -> {
+            if (isStart) {
+                startH = hourOfDay;
+                startM = minute;
+            } else {
+                endH = hourOfDay;
+                endM = minute;
+            }
+            updateUI();
+        }, h, m, false).show();
+    }
+
+    private void updateUI() {
+        PrefsManager p = PrefsManager.getInstance();
+        tvStart.setText(p.formatTime(startH, startM));
+        tvEnd.setText(p.formatTime(endH, endM));
+    }
+
+    private void saveSchedule() {
+        if (startH == endH && startM == endM) {
+            Toast.makeText(this, "Start and end times cannot be identical.", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        PrefsManager p = PrefsManager.getInstance();
-        p.setSlot1(this, s1StartH, s1StartM, s1EndH, s1EndM);
-        p.setSlot2(this, s2StartH, s2StartM, s2EndH, s2EndM);
-
-        // Reschedule all alarms with the new times
-        if (p.isEnabled(this)) {
-            ScheduleManager.scheduleAll(this);
+        List<Schedule> schedules = PrefsManager.getInstance().getSchedules(this);
+        
+        if (scheduleId == null) {
+            // New Schedule
+            Schedule s = new Schedule(startH, startM, endH, endM);
+            schedules.add(s);
+        } else {
+            // Update existing
+            for (Schedule s : schedules) {
+                if (s.getId().equals(scheduleId)) {
+                    s.setStartHour(startH);
+                    s.setStartMinute(startM);
+                    s.setEndHour(endH);
+                    s.setEndMinute(endM);
+                    break;
+                }
+            }
         }
 
-        Toast.makeText(this, "Schedule saved!", Toast.LENGTH_SHORT).show();
+        PrefsManager.getInstance().saveSchedules(this, schedules);
+        ScheduleManager.scheduleAll(this);
+        Toast.makeText(this, "Schedule saved", Toast.LENGTH_SHORT).show();
         finish();
     }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == android.R.id.home) { finish(); return true; }
-        return super.onOptionsItemSelected(item);
+    
+    private void deleteSchedule() {
+        if (scheduleId == null) return;
+        List<Schedule> schedules = PrefsManager.getInstance().getSchedules(this);
+        schedules.removeIf(s -> s.getId().equals(scheduleId));
+        PrefsManager.getInstance().saveSchedules(this, schedules);
+        ScheduleManager.scheduleAll(this);
+        Toast.makeText(this, "Schedule deleted", Toast.LENGTH_SHORT).show();
+        finish();
     }
 }

@@ -3,9 +3,14 @@ package com.wifioptimizer;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class PrefsManager {
 
@@ -82,25 +87,54 @@ public class PrefsManager {
         setBlockedApps(c, current);
     }
 
-    // ─── Schedule — Slot 1 / Slot 2 ────────────────────────────────────────────
-    public int getS1StartH(Context c) { return prefs(c).getInt("s1sh", DEF_S1_SH); }
-    public int getS1StartM(Context c) { return prefs(c).getInt("s1sm", DEF_S1_SM); }
-    public int getS1EndH(Context c)   { return prefs(c).getInt("s1eh", DEF_S1_EH); }
-    public int getS1EndM(Context c)   { return prefs(c).getInt("s1em", DEF_S1_EM); }
+    // ─── Dynamic Schedules ─────────────────────────────────────────────────────
 
-    public void setSlot1(Context c, int startH, int startM, int endH, int endM) {
-        prefs(c).edit().putInt("s1sh", startH).putInt("s1sm", startM)
-                .putInt("s1eh", endH).putInt("s1em", endM).apply();
+    public List<Schedule> getSchedules(Context c) {
+        String json = prefs(c).getString("schedules", null);
+        List<Schedule> schedules = new ArrayList<>();
+        if (json == null) {
+            // Default 2 schedules for backward compatibility / first run
+            schedules.add(new Schedule(DEF_S1_SH, DEF_S1_SM, DEF_S1_EH, DEF_S1_EM));
+            schedules.add(new Schedule(DEF_S2_SH, DEF_S2_SM, DEF_S2_EH, DEF_S2_EM));
+            return schedules;
+        }
+
+        try {
+            JSONArray array = new JSONArray(json);
+            for (int i = 0; i < array.length(); i++) {
+                JSONObject obj = array.getJSONObject(i);
+                Schedule s = new Schedule();
+                s.setId(obj.getString("id"));
+                s.setStartHour(obj.getInt("startH"));
+                s.setStartMinute(obj.getInt("startM"));
+                s.setEndHour(obj.getInt("endH"));
+                s.setEndMinute(obj.getInt("endM"));
+                s.setEnabled(obj.optBoolean("enabled", true));
+                schedules.add(s);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return schedules;
     }
 
-    public int getS2StartH(Context c) { return prefs(c).getInt("s2sh", DEF_S2_SH); }
-    public int getS2StartM(Context c) { return prefs(c).getInt("s2sm", DEF_S2_SM); }
-    public int getS2EndH(Context c)   { return prefs(c).getInt("s2eh", DEF_S2_EH); }
-    public int getS2EndM(Context c)   { return prefs(c).getInt("s2em", DEF_S2_EM); }
-
-    public void setSlot2(Context c, int startH, int startM, int endH, int endM) {
-        prefs(c).edit().putInt("s2sh", startH).putInt("s2sm", startM)
-                .putInt("s2eh", endH).putInt("s2em", endM).apply();
+    public void saveSchedules(Context c, List<Schedule> schedules) {
+        JSONArray array = new JSONArray();
+        try {
+            for (Schedule s : schedules) {
+                JSONObject obj = new JSONObject();
+                obj.put("id", s.getId());
+                obj.put("startH", s.getStartHour());
+                obj.put("startM", s.getStartMinute());
+                obj.put("endH", s.getEndHour());
+                obj.put("endM", s.getEndMinute());
+                obj.put("enabled", s.isEnabled());
+                array.put(obj);
+            }
+            prefs(c).edit().putString("schedules", array.toString()).apply();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public String formatTime(int hour, int minute) {

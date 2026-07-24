@@ -7,7 +7,11 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import com.google.android.material.checkbox.MaterialCheckBox;
 
@@ -31,6 +35,7 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
 
     private final List<AppInfo>        apps;
     private final OnAppToggleListener  listener;
+    private final ExecutorService      iconExecutor = Executors.newFixedThreadPool(4);
 
     // ─── Constructor ───────────────────────────────────────────────────────────
 
@@ -74,12 +79,19 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         AppInfo app = apps.get(position);
 
-        try {
-            android.content.pm.PackageManager pm = holder.itemView.getContext().getPackageManager();
-            holder.ivAppIcon.setImageDrawable(pm.getApplicationIcon(app.getPackageName()));
-        } catch (android.content.pm.PackageManager.NameNotFoundException e) {
-            holder.ivAppIcon.setImageDrawable(null);
-        }
+        holder.ivAppIcon.setImageDrawable(null); // Clear previous
+        iconExecutor.execute(() -> {
+            try {
+                android.content.pm.PackageManager pm = holder.itemView.getContext().getPackageManager();
+                android.graphics.drawable.Drawable icon = pm.getApplicationIcon(app.getPackageName());
+                holder.ivAppIcon.post(() -> {
+                    // Check if view is still bound to the same package
+                    if (holder.tvPackageName.getText().toString().equals(app.getPackageName())) {
+                        holder.ivAppIcon.setImageDrawable(icon);
+                    }
+                });
+            } catch (Exception ignored) { }
+        });
 
         holder.tvAppName.setText(app.getAppName());
         holder.tvPackageName.setText(app.getPackageName());
@@ -107,8 +119,25 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
 
     /** Update list with filtered results (for search). */
     public void updateList(List<AppInfo> filtered) {
+        DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new DiffUtil.Callback() {
+            @Override
+            public int getOldListSize() { return apps.size(); }
+            @Override
+            public int getNewListSize() { return filtered.size(); }
+            @Override
+            public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
+                return apps.get(oldItemPosition).getPackageName().equals(filtered.get(newItemPosition).getPackageName());
+            }
+            @Override
+            public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+                AppInfo oldApp = apps.get(oldItemPosition);
+                AppInfo newApp = filtered.get(newItemPosition);
+                return oldApp.isBlocked() == newApp.isBlocked() &&
+                       oldApp.getAppName().equals(newApp.getAppName());
+            }
+        });
         apps.clear();
         apps.addAll(filtered);
-        notifyDataSetChanged();
+        diffResult.dispatchUpdatesTo(this);
     }
 }

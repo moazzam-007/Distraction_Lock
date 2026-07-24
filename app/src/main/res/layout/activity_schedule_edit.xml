@@ -25,14 +25,14 @@
             android:orientation="vertical"
             android:padding="20dp">
 
-            <!-- Slot 1 Card -->
+            <!-- Schedule Editor Card -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="4dp"
                 app:cardBackgroundColor="@color/card_surface"
-                android:layout_marginBottom="16dp">
+                android:layout_marginBottom="24dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -43,7 +43,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="🌤  Slot 1 — Afternoon"
+                        android:text="Set Time Window"
                         android:textColor="@color/text_primary"
                         android:textSize="15sp"
                         android:textStyle="bold"
@@ -57,7 +57,7 @@
 
                         <!-- Start Time -->
                         <com.google.android.material.card.MaterialCardView
-                            android:id="@+id/cardS1Start"
+                            android:id="@+id/cardStart"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
@@ -77,10 +77,10 @@
                                     android:textColor="@color/text_secondary"
                                     android:textSize="11sp" />
                                 <TextView
-                                    android:id="@+id/tvS1Start"
+                                    android:id="@+id/tvStart"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="03:00 PM"
+                                    android:text="08:00 AM"
                                     android:textColor="@color/accent_blue"
                                     android:textSize="20sp"
                                     android:textStyle="bold"
@@ -99,7 +99,7 @@
 
                         <!-- End Time -->
                         <com.google.android.material.card.MaterialCardView
-                            android:id="@+id/cardS1End"
+                            android:id="@+id/cardEnd"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
@@ -119,117 +119,10 @@
                                     android:textColor="@color/text_secondary"
                                     android:textSize="11sp" />
                                 <TextView
-                                    android:id="@+id/tvS1End"
+                                    android:id="@+id/tvEnd"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="05:00 PM"
-                                    android:textColor="@color/accent_blue"
-                                    android:textSize="20sp"
-                                    android:textStyle="bold"
-                                    android:fontFamily="monospace"
-                                    android:layout_marginTop="4dp" />
-                            </LinearLayout>
-                        </com.google.android.material.card.MaterialCardView>
-                    </LinearLayout>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Slot 2 Card -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="4dp"
-                app:cardBackgroundColor="@color/card_surface"
-                android:layout_marginBottom="24dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="18dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="🌙  Slot 2 — Night"
-                        android:textColor="@color/text_primary"
-                        android:textSize="15sp"
-                        android:textStyle="bold"
-                        android:layout_marginBottom="16dp" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-
-                        <com.google.android.material.card.MaterialCardView
-                            android:id="@+id/cardS2Start"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            app:cardCornerRadius="12dp"
-                            app:cardBackgroundColor="@color/bg_dark"
-                            app:cardElevation="2dp">
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="vertical"
-                                android:padding="14dp"
-                                android:gravity="center">
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="START"
-                                    android:textColor="@color/text_secondary"
-                                    android:textSize="11sp" />
-                                <TextView
-                                    android:id="@+id/tvS2Start"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="11:00 PM"
-                                    android:textColor="@color/accent_blue"
-                                    android:textSize="20sp"
-                                    android:textStyle="bold"
-                                    android:fontFamily="monospace"
-                                    android:layout_marginTop="4dp" />
-                            </LinearLayout>
-                        </com.google.android.material.card.MaterialCardView>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="→"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="20sp"
-                            android:layout_marginHorizontal="12dp" />
-
-                        <com.google.android.material.card.MaterialCardView
-                            android:id="@+id/cardS2End"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            app:cardCornerRadius="12dp"
-                            app:cardBackgroundColor="@color/bg_dark"
-                            app:cardElevation="2dp">
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="vertical"
-                                android:padding="14dp"
-                                android:gravity="center">
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="END"
-                                    android:textColor="@color/text_secondary"
-                                    android:textSize="11sp" />
-                                <TextView
-                                    android:id="@+id/tvS2End"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="03:00 AM"
                                     android:textColor="@color/accent_blue"
                                     android:textSize="20sp"
                                     android:textStyle="bold"
@@ -251,6 +144,21 @@
                 android:textStyle="bold"
                 app:cornerRadius="14dp"
                 app:backgroundTint="@color/accent_blue" />
+
+            <!-- Delete Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDeleteSchedule"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="Delete"
+                android:textColor="@android:color/holo_red_light"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                app:cornerRadius="14dp"
+                app:backgroundTint="@color/bg_dark"
+                android:layout_marginTop="12dp"
+                app:strokeColor="@android:color/holo_red_light"
+                app:strokeWidth="1dp" />
 
         </LinearLayout>
     </LinearLayout>
