@@ -163,7 +163,7 @@ public class MainActivity extends AppCompatActivity {
             for (Schedule s : schedules) {
                 TextView tv = new TextView(this);
                 tv.setText("⏰ " + p.formatTime(s.getStartHour(), s.getStartMinute()) +
-                           "  →  " + p.formatTime(s.getEndHour(), s.getEndMinute()));
+                           "  →  " + p.formatTime(s.getEndHour(), s.getEndMinute()) + "   ✏️");
                 tv.setTextColor(getColor(R.color.text_primary));
                 tv.setTextSize(14f);
                 tv.setTypeface(android.graphics.Typeface.MONOSPACE);

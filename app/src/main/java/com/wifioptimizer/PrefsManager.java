@@ -78,9 +78,8 @@ public class PrefsManager {
         String json = prefs(c).getString("schedules", null);
         List<Schedule> schedules = new ArrayList<>();
         if (json == null) {
-            // Default 2 schedules for backward compatibility / first run
-            schedules.add(new Schedule(DEF_S1_SH, DEF_S1_SM, DEF_S1_EH, DEF_S1_EM));
-            schedules.add(new Schedule(DEF_S2_SH, DEF_S2_SM, DEF_S2_EH, DEF_S2_EM));
+            // Clean slate — no hardcoded schedules by default.
+            // The user must explicitly add a schedule.
             return schedules;
         }
 
