@@ -1,4 +1,4 @@
-# 📶 WiFi Optimizer — Android App
+# 📶 WiFi Optimizer (Distraction Lock) — Android App
 
 > A smart, scheduled network management app for Android that silently controls which apps can access the internet during specific time windows — without root access.
 
@@ -9,16 +9,41 @@
 
 ---
 
-## ✨ Features
+## 📖 The Problem & The Solution
 
-- 🚫 **Selective App Blocking** — Block any installed app's internet access; choose from a searchable list
-- ⏰ **Dual Schedule Windows** — Configure two daily time slots (e.g. 3–5 PM and 11 PM–3 AM)
-- 🔕 **Silent & Invisible** — Blocked apps show "no internet" without any popup or overlay
-- 🔄 **Boot Persistence** — Alarms and VPN state automatically restore after device restart
-- 🧭 **Onboarding Wizard** — 3-step first-run setup (Permission → App Selection → Schedule)
-- ✏️ **Editable Schedule** — Change block windows anytime with a built-in time picker
-- 📋 **App Management Screen** — Add or remove apps from the blocklist at any time
-- 🌙 **Dark Theme UI** — Clean, modern Material Design interface
+**The Problem:** Today, screen addiction isn't just a problem for kids—adults and parents are often even more addicted to scrolling through Reels, Shorts, and useless news feeds. When younger people suggest they reduce their screen time, the advice is often dismissed with, *"We are adults, we do what we want."* 
+
+**The Solution:** WiFi Optimizer acts as your silent digital guardian. You can install it on your parents' phone (or anyone's phone) and set up specific scheduled time slots. During those slots, highly addictive apps (like Instagram, YouTube, etc.) will have their internet access blocked. 
+
+**The best part?** The block happens silently in the background without any popups or warnings. The apps simply appear to be "offline" or loading forever. Meanwhile, the rest of the phone and all other important apps work perfectly fine!
+
+*You can even use it to overcome your own addiction!* Set a schedule for your most distracting apps and get your focus back.
+
+---
+
+## ✨ Key Features
+
+- 🚫 **Selective Stealth Blocking** — Block internet access for specific addictive apps while leaving the rest of the phone online. No annoying popups or overlays!
+- ⏰ **Dynamic Schedule Windows** — Configure multiple daily time slots (e.g., 3–5 PM and 11 PM–3 AM) for blocking to automatically activate.
+- 🔕 **Invisible & Silent** — Blocked apps simply show "no internet". The user won't easily know they are being intentionally blocked.
+- 🔄 **Bulletproof Auto-Revival** — Uses a background Watchdog. Even if a system booster force-kills the app, it automatically revives itself to ensure the schedule is enforced.
+- 🧭 **Clean Slate Setup** — No hardcoded apps or schedules. You choose exactly what to block and when.
+- 🌙 **Dark Theme UI** — Clean, modern Material Design interface.
+
+---
+
+## 🗺️ Roadmap / Future Features
+
+- **Anti-Uninstall Protection**: Once a scheduled block starts, the app cannot be uninstalled or force-stopped until the schedule ends (Perfect for enforcing self-discipline!).
+- **Localization**: Multi-language support.
+- **Enhanced Icon Caching**: Smoother scrolling on the app selection screen.
+
+---
+
+## 🤝 Open Source & Contributing
+
+**You are completely free to use this code, fork it, and add features!** 
+Whether you want to build upon the core VPN engine, add the anti-uninstall feature, or redesign the UI, you are welcome to contribute. Feel free to submit Pull Requests or open Issues!
 
 ---
 
@@ -28,7 +53,8 @@
 |---|---|
 | Language | **Java** (Android SDK) |
 | Network Control | `android.net.VpnService` — local TUN interface |
-| Scheduling | `AlarmManager` with `setExactAndAllowWhileIdle()` |
+| Scheduling | `AlarmManager` with `setInexactRepeating()` |
+| Auto-Revival | Background `WatchdogReceiver` |
 | Boot Persistence | `BroadcastReceiver` for `BOOT_COMPLETED` |
 | UI | Material Design 3, `RecyclerView`, `TimePickerDialog` |
 | Storage | `SharedPreferences` (Singleton pattern) |
@@ -36,7 +62,7 @@
 
 ---
 
-## 🔧 How It Works
+## 🔧 How It Works (Technical)
 
 ```
 User selects apps + sets schedule
@@ -78,19 +104,9 @@ app/src/main/java/com/wifioptimizer/
 ├── BlockVpnService.java      ← Core VPN service (packet drop)
 ├── ScheduleManager.java      ← AlarmManager scheduling utility
 ├── ScheduleReceiver.java     ← Alarm trigger handler
+├── WatchdogReceiver.java     ← Auto-revival watchdog
 └── BootReceiver.java         ← Boot persistence receiver
 ```
-
----
-
-## 🎨 Java Design Patterns Used
-
-- **Singleton** — `PrefsManager.getInstance()` for thread-safe global settings access
-- **Adapter Pattern** — `AppAdapter extends RecyclerView.Adapter` with inner `ViewHolder`
-- **Model/POJO** — `AppInfo.java` for clean data separation
-- **Observer (Callback)** — `OnAppToggleListener` interface for RecyclerView events
-- **Strategy** — `ScheduleManager` static utility class with interchangeable alarm strategies
-- **Template Method** — Android lifecycle callbacks (`onStartCommand`, `onRevoked`)
 
 ---
 
@@ -117,7 +133,7 @@ cd wifi-optimizer
 1. Install the APK and open the app
 2. **Step 1**: Tap "Grant Network Permission" → Allow in system dialog
 3. **Step 2**: Tap "Choose Apps" → Select apps to block (Instagram, YouTube, etc.)
-4. **Step 3**: Review schedule → optionally customize → tap "Start Optimizing"
+4. **Step 3**: Tap the Add icon to create a schedule → customize time → tap Save
 5. Done! The app now manages the network automatically on schedule.
 
 > **Note**: On Xiaomi/MIUI devices, go to Settings → App Info → Battery → set to "No restrictions" for best reliability.
@@ -131,6 +147,7 @@ cd wifi-optimizer
 | `BIND_VPN_SERVICE` | Core VPN functionality |
 | `RECEIVE_BOOT_COMPLETED` | Restore alarms after reboot |
 | `FOREGROUND_SERVICE` | Keep VPN service alive |
+| `FOREGROUND_SERVICE_SPECIAL_USE` | Required for Android 14+ VPN services |
 | `SCHEDULE_EXACT_ALARM` | Precise on/off timing |
 | `POST_NOTIFICATIONS` | VPN status notification (Android 13+) |
 
