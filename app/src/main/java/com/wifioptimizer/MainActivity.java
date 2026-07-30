@@ -55,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         // Ensure VPN is running if it should be (revival if killed by system booster)
-        if (PrefsManager.getInstance().isEnabled(this)) {
+        if (PrefsManager.getInstance().isEnabled(this) && !BlockVpnService.isRunning) {
             ScheduleManager.syncVpnState(this);
         }
         // Refresh UI every time we return to this screen (e.g. after editing apps/schedule)
@@ -116,7 +116,7 @@ public class MainActivity extends AppCompatActivity {
             ScheduleManager.cancelAll(this);
             Intent i = new Intent(this, BlockVpnService.class);
             i.setAction(BlockVpnService.ACTION_STOP);
-            startService(i);
+            stopService(i);
         }
         updateUI();
     }

@@ -35,10 +35,21 @@ public class ScheduleManager {
 
         List<Schedule> schedules = PrefsManager.getInstance().getSchedules(context);
         for (Schedule s : schedules) {
-            int baseRc = s.getId().hashCode() & 0x7FFFFFFF;
-            am.cancel(buildPendingIntent(context, ScheduleReceiver.ACTION_START, baseRc, s.getId(), 0, 0));
-            am.cancel(buildPendingIntent(context, ScheduleReceiver.ACTION_STOP, baseRc + 1, s.getId(), 0, 0));
+            cancelSchedule(context, am, s);
         }
+    }
+
+    public static void cancelSchedule(Context context, Schedule s) {
+        AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        if (am != null) {
+            cancelSchedule(context, am, s);
+        }
+    }
+
+    private static void cancelSchedule(Context context, AlarmManager am, Schedule s) {
+        int baseRc = s.getId().hashCode() & 0x7FFFFFFF;
+        am.cancel(buildPendingIntent(context, ScheduleReceiver.ACTION_START, baseRc, s.getId(), 0, 0));
+        am.cancel(buildPendingIntent(context, ScheduleReceiver.ACTION_STOP, baseRc + 1, s.getId(), 0, 0));
     }
 
     private static void scheduleAlarm(Context context, String scheduleId, int hour, int minute, String action, int requestCode) {
@@ -48,7 +59,7 @@ public class ScheduleManager {
         Calendar cal = Calendar.getInstance();
         cal.set(Calendar.HOUR_OF_DAY, hour);
         cal.set(Calendar.MINUTE, minute);
-        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.SECOND, ScheduleReceiver.ACTION_STOP.equals(action) ? 5 : 0);
         cal.set(Calendar.MILLISECOND, 0);
         if (cal.getTimeInMillis() <= System.currentTimeMillis()) {
             cal.add(Calendar.DAY_OF_YEAR, 1);
@@ -67,7 +78,7 @@ public class ScheduleManager {
         Calendar cal = Calendar.getInstance();
         cal.set(Calendar.HOUR_OF_DAY, hour);
         cal.set(Calendar.MINUTE, minute);
-        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.SECOND, ScheduleReceiver.ACTION_STOP.equals(action) ? 5 : 0);
         cal.set(Calendar.MILLISECOND, 0);
         cal.add(Calendar.DAY_OF_YEAR, 1);
 
@@ -104,6 +115,8 @@ public class ScheduleManager {
 
             int startMins = s.getStartHour() * 60 + s.getStartMinute();
             int endMins = s.getEndHour() * 60 + s.getEndMinute();
+
+            if (startMins == endMins) continue;
 
             if (startMins < endMins) {
                 if (currentMins >= startMins && currentMins < endMins) return true;
@@ -142,7 +155,11 @@ public class ScheduleManager {
         
         // Run every 15 minutes roughly
         long interval = AlarmManager.INTERVAL_FIFTEEN_MINUTES;
-        am.setInexactRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + interval, interval, pi);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + interval, pi);
+        } else {
+            am.setExact(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + interval, pi);
+        }
     }
 
     public static void stopWatchdog(Context context) {

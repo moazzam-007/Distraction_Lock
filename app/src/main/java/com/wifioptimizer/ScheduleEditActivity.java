@@ -127,6 +127,12 @@ public class ScheduleEditActivity extends AppCompatActivity {
     private void deleteSchedule() {
         if (scheduleId == null) return;
         List<Schedule> schedules = PrefsManager.getInstance().getSchedules(this);
+        for (Schedule s : schedules) {
+            if (s.getId().equals(scheduleId)) {
+                ScheduleManager.cancelSchedule(this, s);
+                break;
+            }
+        }
         schedules.removeIf(s -> s.getId().equals(scheduleId));
         PrefsManager.getInstance().saveSchedules(this, schedules);
         ScheduleManager.scheduleAll(this);

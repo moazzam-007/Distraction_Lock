@@ -25,5 +25,8 @@ public class WatchdogReceiver extends BroadcastReceiver {
 
         // Sync state: checks if we are in block window and if VPN is dead, revives it
         ScheduleManager.syncVpnState(context);
+
+        // Re-arm watchdog
+        ScheduleManager.startWatchdog(context);
     }
 }

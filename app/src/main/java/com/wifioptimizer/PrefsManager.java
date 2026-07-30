@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -20,14 +19,14 @@ public class PrefsManager {
     // Cache the SharedPreferences instance itself (NOT a Context) after first
     // access — SharedPreferencesImpl holds no reference back to the Activity
     // that requested it, so this is safe to keep for the process lifetime.
-    private SharedPreferences cachedPrefs;
+    private volatile SharedPreferences cachedPrefs;
 
     private static final int DEF_S1_SH = 15, DEF_S1_SM = 0;
     private static final int DEF_S1_EH = 17, DEF_S1_EM = 0;
     private static final int DEF_S2_SH = 23, DEF_S2_SM = 0;
     private static final int DEF_S2_EH = 3,  DEF_S2_EM = 0;
 
-    private static final Set<String> DEFAULT_BLOCKED = new HashSet<>();
+    private static final Set<String> DEFAULT_BLOCKED = java.util.Collections.emptySet();
 
     private PrefsManager() { }
 
@@ -89,6 +88,7 @@ public class PrefsManager {
                 JSONObject obj = array.getJSONObject(i);
                 Schedule s = new Schedule();
                 s.setId(obj.getString("id"));
+                if (s.getId() == null) continue;
                 s.setStartHour(obj.getInt("startH"));
                 s.setStartMinute(obj.getInt("startM"));
                 s.setEndHour(obj.getInt("endH"));

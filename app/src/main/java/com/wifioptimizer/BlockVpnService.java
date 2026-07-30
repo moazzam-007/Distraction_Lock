@@ -38,11 +38,18 @@ public class BlockVpnService extends VpnService {
     // Visible to MainActivity for UI status updates
     public static volatile boolean isRunning = false;
 
-    private ParcelFileDescriptor vpnFd       = null;
-    private Thread               readerThread = null;
-    private Thread               flakyControllerThread = null;
-    private volatile boolean     shouldRun    = false;
-    private Set<String>          activeBlockedPackages = null;
+    private static final String TUN_ADDRESS    = "10.215.173.1";
+    private static final String DNS_SERVER     = "8.8.8.8";
+    private static final int    TUN_PREFIX_LEN = 32;
+    private static final int    TUN_MTU        = 1500;
+    private static final long   BLOCK_PHASE_MS = 10_000L;
+    private static final long   ALLOW_PHASE_MS = 5_000L;
+
+    private volatile ParcelFileDescriptor vpnFd       = null;
+    private volatile Thread               readerThread = null;
+    private volatile Thread               flakyControllerThread = null;
+    private volatile boolean              shouldRun    = false;
+    private Set<String>                   activeBlockedPackages = null;
 
     // ─── Service Lifecycle ─────────────────────────────────────────────────────
 
@@ -88,7 +95,11 @@ public class BlockVpnService extends VpnService {
         activeBlockedPackages = new java.util.HashSet<>(blockedApps);
 
         if (blockedApps.isEmpty()) {
-            stopForeground(true);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                stopForeground(STOP_FOREGROUND_REMOVE);
+            } else {
+                stopForeground(true);
+            }
             stopSelf();
             return;
         }
@@ -102,11 +113,11 @@ public class BlockVpnService extends VpnService {
                 try {
                     Builder builder = new Builder();
                     builder.setSession("WiFi Optimizer");
-                    builder.addAddress("10.215.173.1", 32);
+                    builder.addAddress(TUN_ADDRESS, TUN_PREFIX_LEN);
                     builder.addRoute("0.0.0.0", 0);
                     builder.addRoute("::", 0);
-                    builder.addDnsServer("8.8.8.8");
-                    builder.setMtu(1500);
+                    builder.addDnsServer(DNS_SERVER);
+                    builder.setMtu(TUN_MTU);
 
                     int appsAdded = 0;
                     if (isBlockPhase) {
@@ -133,35 +144,54 @@ public class BlockVpnService extends VpnService {
                     ParcelFileDescriptor newFd = null;
                     try {
                         newFd = builder.establish();
-                    } catch (Exception e) {}
-
-                    if (newFd == null) {
-                        stopVpn();
-                        return;
-                    }
-
-                    // Close old fd to ensure old reader thread exits
-                    if (vpnFd != null) {
-                        try { vpnFd.close(); } catch (Exception e) {}
-                    }
-                    vpnFd = newFd;
-
-                    // Start new reader thread
-                    ParcelFileDescriptor localFd = newFd;
-                    readerThread = new Thread(() -> {
-                        try (FileInputStream in = new FileInputStream(localFd.getFileDescriptor())) {
-                            byte[] buffer = new byte[32767];
-                            while (shouldRun && vpnFd == localFd) {
-                                if (in.read(buffer) < 0) break;
-                            }
-                        } catch (IOException e) {
-                            // Expected when localFd is closed
+                        if (newFd == null) {
+                            stopVpn();
+                            return;
                         }
-                    });
-                    readerThread.start();
+
+                        // Close old fd to ensure old reader thread exits
+                        ParcelFileDescriptor oldFd = vpnFd;
+                        vpnFd = newFd;
+                        newFd = null; // ownership transferred
+
+                        if (oldFd != null) {
+                            try { oldFd.close(); } catch (Exception e) {}
+                        }
+
+                        // Join old reader thread if it's still alive
+                        if (readerThread != null && readerThread.isAlive()) {
+                            readerThread.interrupt();
+                            try { readerThread.join(300); } catch (InterruptedException ignored) {}
+                        }
+
+                        // Start new reader thread
+                        ParcelFileDescriptor localFd = vpnFd;
+                        readerThread = new Thread(() -> {
+                            try (FileInputStream in = new FileInputStream(localFd.getFileDescriptor())) {
+                                byte[] buffer = new byte[32767];
+                                while (shouldRun && vpnFd == localFd) {
+                                    if (in.read(buffer) > 0) {
+                                        // Sleep to prevent CPU spin during active downloads
+                                        try { Thread.sleep(10); } catch (InterruptedException ignored) {}
+                                    }
+                                }
+                            } catch (IOException e) {
+                                // Expected when localFd is closed
+                            }
+                        });
+                        readerThread.start();
+
+                    } catch (Exception e) {
+                        android.util.Log.e("BlockVpnService", "establish() failed", e);
+                        break; // exit loop
+                    } finally {
+                        if (newFd != null) {
+                            try { newFd.close(); } catch (Exception ignored) {}
+                        }
+                    }
 
                     // Sleep for the phase duration
-                    long sleepTime = isBlockPhase ? 10000 : 5000; // 10s blocked, 5s allowed
+                    long sleepTime = isBlockPhase ? BLOCK_PHASE_MS : ALLOW_PHASE_MS;
                     Thread.sleep(sleepTime);
 
                     isBlockPhase = !isBlockPhase;
@@ -169,6 +199,7 @@ public class BlockVpnService extends VpnService {
                 } catch (InterruptedException e) {
                     break;
                 } catch (Exception e) {
+                    android.util.Log.e("BlockVpnService", "Controller thread error", e);
                     break;
                 }
             }
@@ -185,11 +216,13 @@ public class BlockVpnService extends VpnService {
 
         if (flakyControllerThread != null) {
             flakyControllerThread.interrupt();
+            try { flakyControllerThread.join(2000); } catch (InterruptedException ignored) {}
             flakyControllerThread = null;
         }
 
         if (readerThread != null) {
             readerThread.interrupt();
+            try { readerThread.join(500); } catch (InterruptedException ignored) {}
             readerThread = null;
         }
 
@@ -203,7 +236,11 @@ public class BlockVpnService extends VpnService {
 
     private void stopVpn() {
         tearDownTunnel();
-        stopForeground(true);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            stopForeground(STOP_FOREGROUND_REMOVE);
+        } else {
+            stopForeground(true);
+        }
         stopSelf();
     }
 

@@ -35,7 +35,7 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
 
     private final List<AppInfo>        apps;
     private final OnAppToggleListener  listener;
-    private final ExecutorService      iconExecutor = Executors.newFixedThreadPool(4);
+    private final ExecutorService      iconExecutor = Executors.newSingleThreadExecutor();
 
     // ─── Constructor ───────────────────────────────────────────────────────────
 
@@ -80,13 +80,14 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
         AppInfo app = apps.get(position);
 
         holder.ivAppIcon.setImageDrawable(null); // Clear previous
+        holder.ivAppIcon.setTag(app.getPackageName());
         iconExecutor.execute(() -> {
             try {
                 android.content.pm.PackageManager pm = holder.itemView.getContext().getPackageManager();
                 android.graphics.drawable.Drawable icon = pm.getApplicationIcon(app.getPackageName());
                 holder.ivAppIcon.post(() -> {
                     // Check if view is still bound to the same package
-                    if (holder.tvPackageName.getText().toString().equals(app.getPackageName())) {
+                    if (app.getPackageName().equals(holder.ivAppIcon.getTag())) {
                         holder.ivAppIcon.setImageDrawable(icon);
                     }
                 });

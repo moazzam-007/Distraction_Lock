@@ -103,6 +103,7 @@ public class AppSelectionActivity extends AppCompatActivity
 
             // Update UI on main thread
             uiHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
                 allApps.addAll(loaded);
                 displayedApps.addAll(loaded);
                 adapter.notifyDataSetChanged();

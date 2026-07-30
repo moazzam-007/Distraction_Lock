@@ -17,29 +17,35 @@ public class BootReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         if (intent == null || intent.getAction() == null) return;
 
-        boolean isBootEvent = intent.getAction().equals(Intent.ACTION_BOOT_COMPLETED)
-                || intent.getAction().equals("android.intent.action.QUICKBOOT_POWERON")
-                || intent.getAction().equals("com.htc.intent.action.QUICKBOOT_POWERON");
+        boolean isBootEvent = intent.getAction().equals(Intent.ACTION_BOOT_COMPLETED);
 
         if (!isBootEvent) return;
-        if (!PrefsManager.getInstance().isEnabled(context)) return;
 
-        // Re-register all alarms (lost after reboot)
-        ScheduleManager.scheduleAll(context);
+        final PendingResult pendingResult = goAsync();
+        new Thread(() -> {
+            try {
+                if (!PrefsManager.getInstance().isEnabled(context)) return;
 
-        // If reboot happened during a block window AND VPN permission is already granted,
-        // restart the VPN service immediately
-        boolean inWindow   = ScheduleManager.isInBlockWindow(context);
-        boolean vpnReady   = VpnService.prepare(context) == null;
+                // Re-register all alarms (lost after reboot)
+                ScheduleManager.scheduleAll(context);
 
-        if (inWindow && vpnReady) {
-            Intent vpnIntent = new Intent(context, BlockVpnService.class);
-            vpnIntent.setAction(BlockVpnService.ACTION_START);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(vpnIntent);
-            } else {
-                context.startService(vpnIntent);
+                // If reboot happened during a block window AND VPN permission is already granted,
+                // restart the VPN service immediately
+                boolean inWindow   = ScheduleManager.isInBlockWindow(context);
+                boolean vpnReady   = VpnService.prepare(context) == null;
+
+                if (inWindow && vpnReady) {
+                    Intent vpnIntent = new Intent(context, BlockVpnService.class);
+                    vpnIntent.setAction(BlockVpnService.ACTION_START);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        context.startForegroundService(vpnIntent);
+                    } else {
+                        context.startService(vpnIntent);
+                    }
+                }
+            } finally {
+                pendingResult.finish();
             }
-        }
+        }).start();
     }
 }
