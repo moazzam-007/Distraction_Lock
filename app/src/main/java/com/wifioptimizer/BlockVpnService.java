@@ -42,7 +42,7 @@ public class BlockVpnService extends VpnService {
     private static final String DNS_SERVER     = "8.8.8.8";
     private static final int    TUN_PREFIX_LEN = 32;
     private static final int    TUN_MTU        = 1500;
-    private static final long   BLOCK_PHASE_MS = 10_000L;
+    private static final long   BLOCK_PHASE_MS = 20_000L;
     private static final long   ALLOW_PHASE_MS = 5_000L;
 
     private volatile ParcelFileDescriptor vpnFd       = null;
