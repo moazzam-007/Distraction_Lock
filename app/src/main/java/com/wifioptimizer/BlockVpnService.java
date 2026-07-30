@@ -40,6 +40,7 @@ public class BlockVpnService extends VpnService {
 
     private ParcelFileDescriptor vpnFd       = null;
     private Thread               readerThread = null;
+    private Thread               flakyControllerThread = null;
     private volatile boolean     shouldRun    = false;
     private Set<String>          activeBlockedPackages = null;
 
@@ -82,47 +83,11 @@ public class BlockVpnService extends VpnService {
     // ─── VPN Core Logic ────────────────────────────────────────────────────────
 
     private void startVpn(Set<String> blockedApps) {
-
         setupNotificationChannel();
         startForeground(NOTIF_ID, buildNotification());
-
         activeBlockedPackages = new java.util.HashSet<>(blockedApps);
 
-        Builder builder = new Builder();
-        builder.setSession("WiFi Optimizer");
-        builder.addAddress("10.215.173.1", 32);  // Fake TUN local IP
-        builder.addRoute("0.0.0.0", 0);           // Capture all IPv4 traffic
-        builder.addRoute("::", 0);                // Capture all IPv6 traffic
-        builder.addDnsServer("8.8.8.8");
-        builder.setMtu(1500);
-
-        // addAllowedApplication: ONLY these apps route through VPN tunnel.
-        // All other apps bypass VPN → normal internet unaffected.
-        int appsAdded = 0;
-        for (String pkg : blockedApps) {
-            try {
-                builder.addAllowedApplication(pkg);
-                appsAdded++;
-            } catch (PackageManager.NameNotFoundException e) {
-                // App not installed on this device — skip silently
-            }
-        }
-
-        if (appsAdded == 0) {
-            // No selected apps are installed — nothing to block
-            stopForeground(true);
-            stopSelf();
-            return;
-        }
-
-        try {
-            vpnFd = builder.establish();
-        } catch (Exception e) {
-            stopSelf();
-            return;
-        }
-
-        if (vpnFd == null) {
+        if (blockedApps.isEmpty()) {
             stopForeground(true);
             stopSelf();
             return;
@@ -131,30 +96,86 @@ public class BlockVpnService extends VpnService {
         isRunning = true;
         shouldRun = true;
 
-        // Capture fd reference locally to avoid NPE if stopVpn() nulls it on another thread
-        ParcelFileDescriptor localFd = vpnFd;
-        if (localFd == null) return;
+        flakyControllerThread = new Thread(() -> {
+            boolean isBlockPhase = true;
+            while (shouldRun) {
+                try {
+                    Builder builder = new Builder();
+                    builder.setSession("WiFi Optimizer");
+                    builder.addAddress("10.215.173.1", 32);
+                    builder.addRoute("0.0.0.0", 0);
+                    builder.addRoute("::", 0);
+                    builder.addDnsServer("8.8.8.8");
+                    builder.setMtu(1500);
 
-        // Background thread: reads packets from TUN interface and discards them.
-        // Blocked apps send packets → TUN receives → we discard → no response → "no internet".
-        readerThread = new Thread(() -> {
-            try (FileInputStream in = new FileInputStream(localFd.getFileDescriptor())) {
-                byte[] buffer = new byte[32767];
-                while (shouldRun) {
-                    // Blocking read — thread waits here until a packet arrives
-                    int length = in.read(buffer);
-                    if (length < 0) break;
-                    // Packet is immediately dropped (not forwarded anywhere)
+                    int appsAdded = 0;
+                    if (isBlockPhase) {
+                        for (String pkg : blockedApps) {
+                            try {
+                                builder.addAllowedApplication(pkg);
+                                appsAdded++;
+                            } catch (PackageManager.NameNotFoundException e) {}
+                        }
+                    } else {
+                        // Allow phase: Route our own app so target apps bypass the VPN
+                        try {
+                            builder.addAllowedApplication(getPackageName());
+                            appsAdded++;
+                        } catch (PackageManager.NameNotFoundException e) {}
+                    }
+
+                    if (appsAdded == 0) {
+                        // If we couldn't even add our own package, abort
+                        stopVpn();
+                        return;
+                    }
+
+                    ParcelFileDescriptor newFd = null;
+                    try {
+                        newFd = builder.establish();
+                    } catch (Exception e) {}
+
+                    if (newFd == null) {
+                        stopVpn();
+                        return;
+                    }
+
+                    // Close old fd to ensure old reader thread exits
+                    if (vpnFd != null) {
+                        try { vpnFd.close(); } catch (Exception e) {}
+                    }
+                    vpnFd = newFd;
+
+                    // Start new reader thread
+                    ParcelFileDescriptor localFd = newFd;
+                    readerThread = new Thread(() -> {
+                        try (FileInputStream in = new FileInputStream(localFd.getFileDescriptor())) {
+                            byte[] buffer = new byte[32767];
+                            while (shouldRun && vpnFd == localFd) {
+                                if (in.read(buffer) < 0) break;
+                            }
+                        } catch (IOException e) {
+                            // Expected when localFd is closed
+                        }
+                    });
+                    readerThread.start();
+
+                    // Sleep for the phase duration
+                    long sleepTime = isBlockPhase ? 10000 : 5000; // 10s blocked, 5s allowed
+                    Thread.sleep(sleepTime);
+
+                    isBlockPhase = !isBlockPhase;
+
+                } catch (InterruptedException e) {
+                    break;
+                } catch (Exception e) {
+                    break;
                 }
-            } catch (IOException e) {
-                // IO error or interrupted by stopVpn() closing the stream
-            } finally {
-                isRunning = false; // Keep UI in sync if thread exits unexpectedly
             }
-        }, "vpn-packet-drop-thread");
+            isRunning = false;
+        }, "vpn-flaky-controller");
 
-        readerThread.setDaemon(true);
-        readerThread.start();
+        flakyControllerThread.start();
     }
 
     private void tearDownTunnel() {
@@ -162,9 +183,13 @@ public class BlockVpnService extends VpnService {
         isRunning = false;
         shouldRun = false;
 
-        // The thread blocks on vpnFd.read(). 
-        // Closing the fd below will unblock it and cause an IOException.
+        if (flakyControllerThread != null) {
+            flakyControllerThread.interrupt();
+            flakyControllerThread = null;
+        }
+
         if (readerThread != null) {
+            readerThread.interrupt();
             readerThread = null;
         }
 
