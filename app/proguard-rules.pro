@@ -3,6 +3,7 @@
 -keep class com.wifioptimizer.BlockVpnService { *; }
 -keep class com.wifioptimizer.ScheduleReceiver { *; }
 -keep class com.wifioptimizer.BootReceiver { *; }
+-keep class com.wifioptimizer.WatchdogReceiver { *; }
 
 # Keep Schedule model for JSON deserialization
 -keep class com.wifioptimizer.Schedule { *; }

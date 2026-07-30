@@ -67,10 +67,14 @@ public class ScheduleManager {
 
         PendingIntent pi = buildPendingIntent(context, action, requestCode, scheduleId, hour, minute);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), pi);
-        } else {
-            am.setExact(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), pi);
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), pi);
+            } else {
+                am.setExact(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), pi);
+            }
+        } catch (SecurityException e) {
+            android.util.Log.e("ScheduleManager", "Exact alarm permission revoked", e);
         }
     }
 
@@ -85,10 +89,14 @@ public class ScheduleManager {
         AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         if (am != null) {
             PendingIntent pi = buildPendingIntent(context, action, requestCode, scheduleId, hour, minute);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), pi);
-            } else {
-                am.setExact(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), pi);
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), pi);
+                } else {
+                    am.setExact(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), pi);
+                }
+            } catch (SecurityException e) {
+                android.util.Log.e("ScheduleManager", "Exact alarm permission revoked", e);
             }
         }
     }
@@ -155,10 +163,14 @@ public class ScheduleManager {
         
         // Run every 15 minutes roughly
         long interval = AlarmManager.INTERVAL_FIFTEEN_MINUTES;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + interval, pi);
-        } else {
-            am.setExact(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + interval, pi);
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + interval, pi);
+            } else {
+                am.setExact(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + interval, pi);
+            }
+        } catch (SecurityException e) {
+            android.util.Log.e("ScheduleManager", "Exact alarm permission revoked", e);
         }
     }
 

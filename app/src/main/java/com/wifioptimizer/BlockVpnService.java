@@ -170,9 +170,12 @@ public class BlockVpnService extends VpnService {
                             try (FileInputStream in = new FileInputStream(localFd.getFileDescriptor())) {
                                 byte[] buffer = new byte[32767];
                                 while (shouldRun && vpnFd == localFd) {
-                                    if (in.read(buffer) > 0) {
+                                    int bytesRead = in.read(buffer);
+                                    if (bytesRead > 0) {
                                         // Sleep to prevent CPU spin during active downloads
                                         try { Thread.sleep(10); } catch (InterruptedException ignored) {}
+                                    } else {
+                                        try { Thread.sleep(100); } catch (InterruptedException ignored) {}
                                     }
                                 }
                             } catch (IOException e) {
