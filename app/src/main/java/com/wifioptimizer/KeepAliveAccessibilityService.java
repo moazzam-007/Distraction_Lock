@@ -28,10 +28,13 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
         
         // When the service is restarted by the OS after a kill, 
         // we restore our schedules and VPN state.
-        if (PrefsManager.getInstance().isEnabled(this)) {
-            ScheduleManager.scheduleAll(this);
-            ScheduleManager.syncVpnState(this);
-        }
+        // Run on a background thread to prevent SharedPreferences and JSON parsing on the main thread
+        new Thread(() -> {
+            if (PrefsManager.getInstance().isEnabled(this)) {
+                ScheduleManager.scheduleAll(this);
+                ScheduleManager.syncVpnState(this);
+            }
+        }).start();
     }
 
     @Override
@@ -42,11 +45,5 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
     @Override
     public void onInterrupt() {
         // Do nothing.
-    }
-    
-    @Override
-    public boolean onUnbind(Intent intent) {
-        Log.i(TAG, "Service Unbound");
-        return super.onUnbind(intent);
     }
 }

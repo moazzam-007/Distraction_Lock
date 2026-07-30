@@ -53,9 +53,16 @@ public class PermissionHelper {
                         "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity"
                 ));
                 found = true;
+            } else if (manufacturer.contains("samsung")) {
+                intent.setComponent(new ComponentName(
+                        "com.samsung.android.sm.apps",
+                        "com.samsung.android.sm.apps.battery.AppSleepForDetailActivity"
+                ));
+                found = true;
             }
 
             if (found) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 context.startActivity(intent);
                 return;
             }
@@ -71,7 +78,9 @@ public class PermissionHelper {
      * Opens the standard Android Battery Optimization settings.
      */
     public static void requestIgnoreBatteryOptimizations(Context context) {
-        Intent intent = new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
+        Intent intent = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+        intent.setData(Uri.parse("package:" + context.getPackageName()));
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         try {
             context.startActivity(intent);
         } catch (Exception e) {
@@ -84,6 +93,7 @@ public class PermissionHelper {
      */
     public static void requestAccessibility(Context context) {
         Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         try {
             context.startActivity(intent);
         } catch (Exception e) {
@@ -94,6 +104,7 @@ public class PermissionHelper {
     private static void openAppSettings(Context context) {
         Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
         intent.setData(Uri.parse("package:" + context.getPackageName()));
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         context.startActivity(intent);
     }
 }

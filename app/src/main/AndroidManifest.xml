@@ -94,9 +94,9 @@
             </intent-filter>
         </receiver>
 
-        <!-- Resurrection Hook: Accessibility Service -->
         <service
             android:name=".KeepAliveAccessibilityService"
+            android:label="@string/accessibility_service_label"
             android:exported="false"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>

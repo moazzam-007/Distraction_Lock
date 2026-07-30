@@ -252,14 +252,15 @@ public class MainActivity extends AppCompatActivity {
                 .setTitle("Fix Auto-Kill")
                 .setMessage("To stop your phone from automatically killing this app in the background, you should enable two settings:\n\n" +
                             "1. Autostart / Unrestricted Battery\n" +
-                            "2. Accessibility Service (This ensures the app restarts instantly if killed)")
-                .setPositiveButton("Autostart", (dialog, which) -> {
-                    PermissionHelper.requestAutoStart(this);
+                            "2. Accessibility Service (This ensures the app restarts instantly if killed. The service reads no screen content — it only allows the OS to restart this app automatically.)")
+                .setItems(new String[]{"1. Enable Autostart", "2. Enable Accessibility Service"}, (dialog, which) -> {
+                    if (which == 0) {
+                        PermissionHelper.requestAutoStart(this);
+                    } else {
+                        PermissionHelper.requestAccessibility(this);
+                    }
                 })
-                .setNegativeButton("Accessibility", (dialog, which) -> {
-                    PermissionHelper.requestAccessibility(this);
-                })
-                .setNeutralButton("Cancel", null)
+                .setNegativeButton("Cancel", null)
                 .show();
     }
 }
