@@ -16,6 +16,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.switchmaterial.SwitchMaterial;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 /**
  * MainActivity — Main screen of the WiFi Optimizer app.
@@ -104,6 +105,10 @@ public class MainActivity extends AppCompatActivity {
         btnAddSchedule.setOnClickListener(v ->
                 startActivity(new Intent(this, ScheduleEditActivity.class))
         );
+
+        // Fix Background button
+        MaterialButton btnFixBackground = findViewById(R.id.btnFixBackground);
+        btnFixBackground.setOnClickListener(v -> showFixBackgroundDialog());
     }
 
     // ─── UI State ──────────────────────────────────────────────────────────────
@@ -240,5 +245,21 @@ public class MainActivity extends AppCompatActivity {
                         new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 99);
             }
         }
+    }
+
+    private void showFixBackgroundDialog() {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Fix Auto-Kill")
+                .setMessage("To stop your phone from automatically killing this app in the background, you should enable two settings:\n\n" +
+                            "1. Autostart / Unrestricted Battery\n" +
+                            "2. Accessibility Service (This ensures the app restarts instantly if killed)")
+                .setPositiveButton("Autostart", (dialog, which) -> {
+                    PermissionHelper.requestAutoStart(this);
+                })
+                .setNegativeButton("Accessibility", (dialog, which) -> {
+                    PermissionHelper.requestAccessibility(this);
+                })
+                .setNeutralButton("Cancel", null)
+                .show();
     }
 }

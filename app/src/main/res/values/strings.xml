@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">WiFi Optimizer</string>
+    <string name="title_schedule">Optimization Schedule</string>
+    <string name="accessibility_desc">Minimal background service to ensure network optimization resumes automatically after memory boosts or device reboots. This service does not read or monitor any screen content.</string>
 </resources>
